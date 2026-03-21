@@ -82,6 +82,235 @@ Automatización para iaDSK, una herramienta de línea de comandos para crear, ed
 
 ---
 
+## Ejemplos Detallados
+
+### 📋 Operaciones Básicas
+
+#### Mostrar ayuda
+```
+"Muéstrame la ayuda de iaDSK"
+"¿Qué comandos están disponibles en iaDSK?"
+```
+
+#### Crear un nuevo disco
+```
+"Crea un nuevo disco llamado project.dsk"
+"Haz una nueva imagen DSK llamada backup.dsk"
+```
+
+#### Listar contenido del disco (catálogo)
+```
+"Muéstrame qué hay en el disco game.dsk"
+"Lista todos los archivos en retro.dsk"
+"¿Qué archivos hay en el disco collection.dsk?"
+```
+
+#### Comprobar espacio libre
+```
+"¿Cuánto espacio libre hay en demo.dsk?"
+"Comprueba el espacio disponible en backup.dsk"
+```
+
+---
+
+### 💾 Operaciones con Archivos
+
+#### Guardar archivos de texto ASCII
+```
+"Añade el archivo readme.txt al disco docs.dsk como ASCII"
+"Guarda intro.txt en game.dsk como archivo de texto"
+"Importa el archivo de texto credits.txt en project.dsk"
+```
+
+#### Guardar archivos binarios (ejecutables)
+```
+"Añade loader.bin a game.dsk como binario con dirección de carga 0x8000 y ejecución en 0x8000"
+"Guarda sprite.bin en graphics.dsk como binario, carga en 40000, ejecuta en 40000"
+"Importa main.bin en project.dsk como binario con carga y ejecución ambos en 32768"
+```
+
+#### Guardar archivos de datos raw
+```
+"Añade tileset.dat a graphics.dsk como datos raw"
+"Guarda music.raw en audio.dsk como tipo raw"
+```
+
+#### Guardar con nombre AMSDOS personalizado
+```
+"Guarda loader.bin en game.dsk como binario con el nombre BOOT.BIN, carga 0x4000, ejecuta 0x4000"
+"Añade main.bas a project.dsk como ASCII con el nombre START.BAS"
+```
+
+#### Extraer archivos del disco
+```
+"Extrae program.bas de game.dsk a ./extracted/"
+"Obtén todos los archivos de backup.dsk y guárdalos en la carpeta output"
+"Exporta loader.bin de retro.dsk a ./binaries/loader.bin"
+```
+
+#### Eliminar archivos del disco
+```
+"Elimina el archivo old.bas de project.dsk"
+"Borra temp.bin de game.dsk"
+"Quita el archivo unused.dat de backup.dsk"
+```
+
+---
+
+### 🔍 Ver Contenido de Archivos
+
+#### Ver archivo como lista raw
+```
+"Lista el contenido de program.bas de game.dsk"
+"Muéstrame el contenido raw de data.bin en project.dsk"
+```
+
+#### Ver programas BASIC
+```
+"Muéstrame el programa BASIC main.bas de game.dsk"
+"Muestra loader.bas de retro.dsk como BASIC con líneas separadas"
+"Ver el contenido BASIC de menu.bas en project.dsk, separado por líneas"
+```
+
+#### Ver archivos de texto ASCII
+```
+"Muestra el contenido ASCII de readme.txt de docs.dsk"
+"Muestra intro.txt de game.dsk como texto"
+```
+
+#### Ver archivos en hexadecimal
+```
+"Muestra sprite.bin de graphics.dsk en hexadecimal"
+"Muestra el volcado hex de loader.bin en game.dsk"
+"Ver data.bin de backup.dsk en formato hex"
+```
+
+#### Desensamblar archivos binarios Z80
+```
+"Desensambla loader.bin de game.dsk"
+"Muestra el ensamblador Z80 de sprite.bin en graphics.dsk"
+"Desensambla main.bin de retro.dsk y muéstrame el código"
+```
+
+#### Ver código fuente DAMS
+```
+"Muestra el código fuente DAMS de sprite.asm de project.dsk"
+"Muestra routines.dam de game.dsk como ensamblador DAMS"
+```
+
+---
+
+### 🎯 Flujos de Trabajo Complejos
+
+#### Crear disco y añadir múltiples archivos
+```
+"Crea un nuevo disco game.dsk, luego añade loader.bin como binario (carga 0x8000, ejecuta 0x8000), 
+añade main.bas como ASCII, y añade sprites.bin como binario (carga 0x4000, ejecuta 0x4000)"
+```
+
+#### Flujo de respaldo
+```
+"Muéstrame todos los archivos en original.dsk, luego extráelos todos a ./backup/, 
+después crea un nuevo disco copy.dsk y añade todos los archivos extraídos"
+```
+
+#### Inspeccionar y modificar
+```
+"Muestra el contenido de project.dsk, comprueba el espacio libre, 
+luego elimina old.bas y temp.bin, y añade new.bas como ASCII"
+```
+
+#### Flujo de desarrollo
+```
+"Crea dev.dsk, añade loader.bin (binario, carga 0x8000, ejecuta 0x8000), 
+añade game.bas (ASCII), añade sprites.bin (binario, carga 0xC000), 
+luego muéstrame el catálogo final y el espacio libre"
+```
+
+#### Análisis de binarios
+```
+"Extrae loader.bin de game.dsk, muéstrame su volcado hex, 
+luego desensámblalo para ver el código ensamblador Z80"
+```
+
+---
+
+### 🔧 Opciones Avanzadas
+
+#### Usar nombre de archivo AMSDOS personalizado (formato 8.3)
+```
+"Guarda mi_archivo_largo.bin en game.dsk como LOADER.BIN con carga 0x8000 y ejecuta 0x8000"
+```
+
+#### Especificar número de usuario (0-15)
+```
+"Guarda config.dat en disk.dsk como ASCII con número de usuario 5"
+"Añade hidden.bin a secret.dsk como binario (carga 0x4000, ejecuta 0x4000) con usuario 7"
+```
+
+#### Establecer protección de solo lectura
+```
+"Guarda important.bas en backup.dsk como ASCII y márcalo como solo lectura"
+"Añade system.bin a boot.dsk como binario (carga 0x4000, ejecuta 0x4000) con protección de solo lectura"
+```
+
+#### Establecer atributo de archivo del sistema
+```
+"Guarda kernel.bin en os.dsk como binario (carga 0x0000, ejecuta 0x0000) y márcalo como archivo del sistema"
+```
+
+---
+
+### 📦 Operaciones por Lotes
+
+#### Procesar múltiples discos
+```
+"Muéstrame el catálogo de disk1.dsk, disk2.dsk y disk3.dsk"
+"Comprueba el espacio libre en todos los discos: game1.dsk, game2.dsk, game3.dsk"
+```
+
+#### Organizar por tipo de archivo
+```
+"Extrae todos los archivos .BAS de project.dsk a ./basic/, 
+todos los archivos .BIN a ./binaries/, y todos los archivos .TXT a ./text/"
+```
+
+---
+
+### 🚨 Ejemplos de Manejo de Errores
+
+#### Cuando el disco no existe
+```
+Usuario: "Muestra el contenido de missing.dsk"
+Agente: Mostrará mensaje de error indicando que no se encontró el archivo de disco
+```
+
+#### Cuando el archivo no existe en el disco
+```
+Usuario: "Extrae nonexistent.bas de game.dsk"
+Agente: Mostrará error indicando que el archivo no está en el disco
+```
+
+#### Cuando el archivo ya existe en el disco
+```
+Usuario: "Añade loader.bin a game.dsk"
+Agente: Si LOADER.BIN ya existe, mostrará error. 
+        El usuario puede entonces eliminar el archivo antiguo primero o usar un nombre diferente.
+```
+
+---
+
+### 💡 Consejos
+
+- **Nomenclatura de archivos**: AMSDOS usa formato 8.3 (8 caracteres nombre, 3 caracteres extensión). Los nombres largos se truncan automáticamente.
+- **Direcciones**: Se pueden especificar en decimal (32768) o hexadecimal (0x8000 u 8000h)
+- **Números de usuario**: Rango 0-15, por defecto es 0. Usuario 0 es estándar, otros pueden organizar archivos.
+- **Protección**: Los atributos de solo lectura y sistema ayudan a proteger archivos importantes.
+- **Capacidad del disco**: Los discos CPC estándar contienen 178 KB (formato Data) o 169 KB (formato System)
+- **Tipos de archivo**: ASCII para texto/BASIC, Binario para ejecutables, Raw para datos puros
+
+---
+
 ## Uso
 
 ### Con OpenCode/Claude Code
