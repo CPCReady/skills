@@ -210,6 +210,15 @@ function Write-KeyValueTable {
     Write-MarkdownTable -Headers @("Field", "Value") -Rows $rows
 }
 
+function Format-KbValue {
+    param($Value)
+    
+    if ($null -eq $Value -or $Value -eq "") {
+        return ""
+    }
+    return "$Value KB"
+}
+
 function Write-CatMarkdown {
     param($Data)
 
@@ -241,9 +250,9 @@ function Write-CatMarkdown {
     }
 
     Write-KeyValueTable -Title "Space" -Map @{
-        total_kb = (Get-MapValue -Map $Data -Key "total_kb")
-        used_kb = (Get-MapValue -Map $Data -Key "used_kb")
-        free_kb = (Get-MapValue -Map $Data -Key "free_kb")
+        total_kb = (Format-KbValue (Get-MapValue -Map $Data -Key "total_kb"))
+        used_kb = (Format-KbValue (Get-MapValue -Map $Data -Key "used_kb"))
+        free_kb = (Format-KbValue (Get-MapValue -Map $Data -Key "free_kb"))
     } -PreferredKeys @("total_kb", "used_kb", "free_kb")
 }
 
@@ -276,11 +285,21 @@ function Write-PayloadMarkdown {
 
     switch ($command) {
         "new" {
-            Write-KeyValueTable -Title "Summary" -Map $data -PreferredKeys @("dsk", "total_kb", "used_kb", "free_kb")
+            Write-KeyValueTable -Title "Summary" -Map @{
+                dsk = (Get-MapValue -Map $data -Key "dsk")
+                total_kb = (Format-KbValue (Get-MapValue -Map $data -Key "total_kb"))
+                used_kb = (Format-KbValue (Get-MapValue -Map $data -Key "used_kb"))
+                free_kb = (Format-KbValue (Get-MapValue -Map $data -Key "free_kb"))
+            } -PreferredKeys @("dsk", "total_kb", "used_kb", "free_kb")
             return
         }
         "free" {
-            Write-KeyValueTable -Title "Free Space" -Map $data -PreferredKeys @("dsk", "total_kb", "used_kb", "free_kb")
+            Write-KeyValueTable -Title "Free Space" -Map @{
+                dsk = (Get-MapValue -Map $data -Key "dsk")
+                total_kb = (Format-KbValue (Get-MapValue -Map $data -Key "total_kb"))
+                used_kb = (Format-KbValue (Get-MapValue -Map $data -Key "used_kb"))
+                free_kb = (Format-KbValue (Get-MapValue -Map $data -Key "free_kb"))
+            } -PreferredKeys @("dsk", "total_kb", "used_kb", "free_kb")
             return
         }
         "cat" {

@@ -172,6 +172,13 @@ def show_key_values(title, mapping, preferred=None):
     print_table(["Field", "Value"], rows)
 
 
+def format_kb_value(value):
+    """Format a numeric value with KB suffix"""
+    if value == "" or value is None:
+        return ""
+    return f"{value} KB"
+
+
 def format_cat(data):
     print("### Catalog")
     print(f"- Disk: `{md_escape(data.get('dsk', ''))}`")
@@ -201,9 +208,9 @@ def format_cat(data):
     show_key_values(
         "Space",
         {
-            "total_kb": data.get("total_kb", ""),
-            "used_kb": data.get("used_kb", ""),
-            "free_kb": data.get("free_kb", ""),
+            "total_kb": format_kb_value(data.get("total_kb", "")),
+            "used_kb": format_kb_value(data.get("used_kb", "")),
+            "free_kb": format_kb_value(data.get("free_kb", "")),
         },
         ["total_kb", "used_kb", "free_kb"],
     )
@@ -227,11 +234,21 @@ def format_response(payload):
         return
 
     if command == "new":
-        show_key_values("Summary", data, ["dsk", "total_kb", "used_kb", "free_kb"])
+        show_key_values("Summary", {
+            "dsk": data.get("dsk", ""),
+            "total_kb": format_kb_value(data.get("total_kb", "")),
+            "used_kb": format_kb_value(data.get("used_kb", "")),
+            "free_kb": format_kb_value(data.get("free_kb", "")),
+        }, ["dsk", "total_kb", "used_kb", "free_kb"])
         return
 
     if command == "free":
-        show_key_values("Free Space", data, ["dsk", "total_kb", "used_kb", "free_kb"])
+        show_key_values("Free Space", {
+            "dsk": data.get("dsk", ""),
+            "total_kb": format_kb_value(data.get("total_kb", "")),
+            "used_kb": format_kb_value(data.get("used_kb", "")),
+            "free_kb": format_kb_value(data.get("free_kb", "")),
+        }, ["dsk", "total_kb", "used_kb", "free_kb"])
         return
 
     if command == "cat":
