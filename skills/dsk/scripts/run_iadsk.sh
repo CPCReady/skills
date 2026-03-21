@@ -9,126 +9,126 @@ output_format="markdown"
 args=()
 
 while [[ $# -gt 0 ]]; do
-    case "$1" in
-        --binary)
-            shift
-            if [[ $# -eq 0 ]]; then
-                echo "Missing value for --binary" >&2
-                exit 1
-            fi
-            binary="$1"
-            ;;
-        --raw-json)
-            output_format="json"
-            ;;
-        --format)
-            shift
-            if [[ $# -eq 0 ]]; then
-                echo "Missing value for --format" >&2
-                exit 1
-            fi
-            output_format="$1"
-            ;;
-        --)
-            shift
-            args=("$@")
-            break
-            ;;
-        -h|--help)
-            cat <<'USAGE'
+	case "$1" in
+	--binary)
+		shift
+		if [[ $# -eq 0 ]]; then
+			echo "Missing value for --binary" >&2
+			exit 1
+		fi
+		binary="$1"
+		;;
+	--raw-json)
+		output_format="json"
+		;;
+	--format)
+		shift
+		if [[ $# -eq 0 ]]; then
+			echo "Missing value for --format" >&2
+			exit 1
+		fi
+		output_format="$1"
+		;;
+	--)
+		shift
+		args=("$@")
+		break
+		;;
+	-h | --help)
+		cat <<'USAGE'
 Usage: run_iadsk.sh [--binary <path>] [--format markdown|json] [--raw-json] -- <iadsk args>
 USAGE
-            exit 0
-            ;;
-        *)
-            args+=("$1")
-            ;;
-    esac
-    shift
+		exit 0
+		;;
+	*)
+		args+=("$1")
+		;;
+	esac
+	shift
 done
 
 if [[ "$output_format" != "markdown" && "$output_format" != "json" ]]; then
-    echo "Invalid --format value: $output_format (expected: markdown or json)" >&2
-    exit 1
+	echo "Invalid --format value: $output_format (expected: markdown or json)" >&2
+	exit 1
 fi
 
 if [[ ${#args[@]} -eq 0 ]]; then
-    args=(help)
+	args=(help)
 fi
 
 resolve_platform() {
-    local uname_s uname_m
-    uname_s="$(uname -s)"
-    uname_m="$(uname -m)"
+	local uname_s uname_m
+	uname_s="$(uname -s)"
+	uname_m="$(uname -m)"
 
-    case "$uname_s" in
-        Darwin) platform="macos" ;;
-        Linux) platform="linux" ;;
-        MINGW*|MSYS*|CYGWIN*) platform="windows" ;;
-        *) platform="${uname_s,,}" ;;
-    esac
+	case "$uname_s" in
+	Darwin) platform="macos" ;;
+	Linux) platform="linux" ;;
+	MINGW* | MSYS* | CYGWIN*) platform="windows" ;;
+	*) platform="${uname_s,,}" ;;
+	esac
 
-    case "$uname_m" in
-        x86_64|amd64) arch="x64" ;;
-        arm64|aarch64) arch="arm64" ;;
-        *) arch="${uname_m,,}" ;;
-    esac
+	case "$uname_m" in
+	x86_64 | amd64) arch="x64" ;;
+	arm64 | aarch64) arch="arm64" ;;
+	*) arch="${uname_m,,}" ;;
+	esac
 }
 
 resolve_binary() {
-    local platform arch
-    resolve_platform
+	local platform arch
+	resolve_platform
 
-    if [[ -n "$binary" ]]; then
-        if [[ -f "$binary" ]]; then
-            echo "$binary"
-            return 0
-        fi
-        echo "Binary not found: $binary" >&2
-        return 1
-    fi
+	if [[ -n "$binary" ]]; then
+		if [[ -f "$binary" ]]; then
+			echo "$binary"
+			return 0
+		fi
+		echo "Binary not found: $binary" >&2
+		return 1
+	fi
 
-    if command -v iaDSK >/dev/null 2>&1; then
-        command -v iaDSK
-        return 0
-    fi
+	if command -v iaDSK >/dev/null 2>&1; then
+		command -v iaDSK
+		return 0
+	fi
 
-    local default_bin
-    if [[ "$platform" == "windows" ]]; then
-        default_bin="${USERPROFILE:-$HOME}/bin/iaDSK.exe"
-    else
-        default_bin="$HOME/.local/bin/iaDSK"
-    fi
-    if [[ -f "$default_bin" ]]; then
-        echo "$default_bin"
-        return 0
-    fi
+	local default_bin
+	if [[ "$platform" == "windows" ]]; then
+		default_bin="${USERPROFILE:-$HOME}/bin/iaDSK.exe"
+	else
+		default_bin="$HOME/.local/bin/iaDSK"
+	fi
+	if [[ -f "$default_bin" ]]; then
+		echo "$default_bin"
+		return 0
+	fi
 
-    local bundled="$SKILL_ROOT/assets/bin/${platform}-${arch}/iaDSK"
-    if [[ "$platform" == "windows" ]]; then
-        bundled="$SKILL_ROOT/assets/bin/${platform}-${arch}/iaDSK.exe"
-    fi
+	local bundled="$SKILL_ROOT/assets/bin/${platform}-${arch}/iaDSK"
+	if [[ "$platform" == "windows" ]]; then
+		bundled="$SKILL_ROOT/assets/bin/${platform}-${arch}/iaDSK.exe"
+	fi
 
-    if [[ -f "$bundled" ]]; then
-        if [[ "$platform" != "windows" ]]; then
-            chmod +x "$bundled"
-        fi
-        echo "$bundled"
-        return 0
-    fi
+	if [[ -f "$bundled" ]]; then
+		if [[ "$platform" != "windows" ]]; then
+			chmod +x "$bundled"
+		fi
+		echo "$bundled"
+		return 0
+	fi
 
-    echo "iaDSK no está disponible para ${platform}-${arch}. Ejecuta primero scripts/install_iadsk.sh o install_iadsk.ps1." >&2
-    return 1
+	echo "iaDSK no está disponible para ${platform}-${arch}. Ejecuta primero scripts/install_iadsk.sh o install_iadsk.ps1." >&2
+	return 1
 }
 
 render_markdown() {
-    local json_file="$1"
+	local json_file="$1"
 
-    if ! command -v python3 >/dev/null 2>&1; then
-        return 1
-    fi
+	if ! command -v python3 >/dev/null 2>&1; then
+		return 1
+	fi
 
-    python3 - "$json_file" <<'PY'
+	python3 - "$json_file" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -169,12 +169,12 @@ def show_key_values(title, mapping, preferred=None):
         keys.extend([k for k in preferred if k in mapping])
     keys.extend([k for k in mapping.keys() if k not in keys])
     rows = [(k, mapping.get(k)) for k in keys]
-    print_table(["Campo", "Valor"], rows)
+    print_table(["Field", "Value"], rows)
 
 
 def format_cat(data):
-    print("### Catalogo")
-    print(f"- Disco: `{md_escape(data.get('dsk', ''))}`")
+    print("### Catalog")
+    print(f"- Disk: `{md_escape(data.get('dsk', ''))}`")
     entries = data.get("entries", []) or []
     if entries:
         rows = []
@@ -194,12 +194,12 @@ def format_cat(data):
                     attrs,
                 )
             )
-        print_table(["Archivo", "Usuario", "Carga", "Ejec", "Tamano", "Attr"], rows)
+        print_table(["File", "User", "Load", "Exec", "Size", "Attr"], rows)
     else:
-        print("No hay archivos en el disco.\n")
+        print("No files on disk.\n")
 
     show_key_values(
-        "Espacio",
+        "Space",
         {
             "total_kb": data.get("total_kb", ""),
             "used_kb": data.get("used_kb", ""),
@@ -216,22 +216,22 @@ def format_response(payload):
     errors = payload.get("errors") or []
 
     if not ok:
-        print("### Errores")
+        print("### Errors")
         rows = []
         for err in errors:
             rows.append((err.get("code", ""), err.get("message", "")))
         if rows:
-            print_table(["Codigo", "Mensaje"], rows)
+            print_table(["Code", "Message"], rows)
         else:
-            print("Error sin detalle.")
+            print("Error without details.")
         return
 
     if command == "new":
-        show_key_values("Resumen", data, ["dsk", "total_kb", "used_kb", "free_kb"])
+        show_key_values("Summary", data, ["dsk", "total_kb", "used_kb", "free_kb"])
         return
 
     if command == "free":
-        show_key_values("Espacio libre", data, ["dsk", "total_kb", "used_kb", "free_kb"])
+        show_key_values("Free Space", data, ["dsk", "total_kb", "used_kb", "free_kb"])
         return
 
     if command == "cat":
@@ -239,28 +239,32 @@ def format_response(payload):
         return
 
     if command in {"save", "get", "era"}:
-        show_key_values(f"Resultado de {command}", data)
+        show_key_values(f"Result: {command}", data)
         return
 
     if "content" in data:
-        print("### Contenido")
+        print("### Content")
         print("```text")
         content = data.get("content", "")
         if content:
             print(str(content).rstrip("\n"))
         print("```\n")
-        show_key_values(
-            "Metadatos",
-            {
-                "tipo": data.get("content_type", data.get("detected_type", "")),
-                "lineas": data.get("line_count", ""),
-                "bytes": data.get("bytes", ""),
-            },
-            ["tipo", "lineas", "bytes"],
-        )
+        
+        # METADATA TABLE - Commented out but can be re-enabled
+        # Uncomment the lines below to show content metadata
+        # show_key_values(
+        #     "Metadata",
+        #     {
+        #         "type": data.get("content_type", data.get("detected_type", "")),
+        #         "encoding": data.get("encoding", ""),
+        #         "lines": data.get("line_count", ""),
+        #         "bytes": data.get("bytes", ""),
+        #     },
+        #     ["type", "encoding", "lines", "bytes"],
+        # )
         return
 
-    show_key_values(f"Resultado de {command}", data)
+    show_key_values(f"Result: {command}", data)
 
 
 json_path = Path(sys.argv[1])
@@ -284,26 +288,26 @@ status=$?
 set -e
 
 if [[ "$output_format" == "json" ]]; then
-    if [[ -s "$tmp_out" ]]; then
-        cat "$tmp_out"
-    fi
+	if [[ -s "$tmp_out" ]]; then
+		cat "$tmp_out"
+	fi
 else
-    rendered=false
-    if [[ -s "$tmp_out" ]]; then
-        if render_markdown "$tmp_out" 2>/dev/null; then
-            rendered=true
-        fi
-    fi
+	rendered=false
+	if [[ -s "$tmp_out" ]]; then
+		if render_markdown "$tmp_out" 2>/dev/null; then
+			rendered=true
+		fi
+	fi
 
-    if [[ "$rendered" == false && -s "$tmp_out" ]]; then
-        cat <<'MD'
-No se pudo formatear la salida de iaDSK.
+	if [[ "$rendered" == false && -s "$tmp_out" ]]; then
+		cat <<'MD'
+Could not format iaDSK output.
 MD
-    fi
+	fi
 fi
 
 if [[ -s "$tmp_err" ]]; then
-    cat "$tmp_err" >&2
+	cat "$tmp_err" >&2
 fi
 
 rm -f "$tmp_out" "$tmp_err"

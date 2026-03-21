@@ -99,15 +99,22 @@ Aliases válidos:
 - `rm` -> `era`
 - `disassemble` -> `disasm`
 
-## Presentación de resultados al usuario
+## Presenting results to the user
 
-**IMPORTANTE:** La salida de iaDSK ya está en formato Markdown listo para renderizar. El agente DEBE:
+**IMPORTANT:** The iaDSK output is already in Markdown format ready to render. The agent MUST:
 
-- Mostrar la salida completa del comando tal como la devuelve iaDSK, sin resumir, sin omitir filas, sin reinterpretar.
-- NO hacer un resumen ni una versión simplificada de la tabla o los datos.
-- NO mostrar el código Markdown en crudo (como `| col | col |`); renderizarlo para que el usuario lo vea como tabla, lista y títulos formateados.
-- Si la salida incluye varias secciones (ej. Catalogo + Espacio), mostrarlas todas completas.
-- NO mostrar ni mencionar el comando ejecutado, la ruta del binario, ni ningún detalle técnico de invocación. El usuario solo debe ver el resultado final formateado.
+- **Hide the command execution** from the user (don't show the bash tool call or raw output in a code block)
+- **Present the result as rendered Markdown** by copying the script output directly into the response text, not as a code block
+- Show the complete output as returned by iaDSK, without summarizing, omitting rows, or reinterpreting
+- Do NOT show markdown source code (like `| col | col |`); the user should see rendered tables, lists, and formatted headings
+- If the output includes multiple sections (e.g., Catalog + Space), show them all complete
+- Do NOT mention the executed command, binary path, or any technical invocation details
+- The user should only see the final formatted result
+
+**Example workflow:**
+1. Execute internally: `./scripts/run_iadsk.sh -- cat --dsk demo.dsk`
+2. Capture the markdown output
+3. Present to user: Paste the markdown directly in your text response so it renders as formatted tables/headings, not as code
 
 ## Validación mínima tras instalación
 

@@ -61,7 +61,7 @@ function Resolve-IadskBinary {
         return $bundled
     }
 
-    throw "iaDSK no está disponible para windows-$arch. Ejecuta primero scripts/install_iadsk.ps1 o install_iadsk.sh."
+    throw "iaDSK is not available for windows-$arch. Run scripts/install_iadsk.ps1 or install_iadsk.sh first."
 }
 
 function Convert-CellValue {
@@ -207,20 +207,20 @@ function Write-KeyValueTable {
         $rows += ,@($k, (Convert-CellValue (Get-MapValue -Map $Map -Key $k)))
     }
 
-    Write-MarkdownTable -Headers @("Campo", "Valor") -Rows $rows
+    Write-MarkdownTable -Headers @("Field", "Value") -Rows $rows
 }
 
 function Write-CatMarkdown {
     param($Data)
 
-    Write-Output "### Catalogo"
-    Write-Output ('- Disco: `{0}`' -f (Convert-CellValue (Get-MapValue -Map $Data -Key "dsk")))
+    Write-Output "### Catalog"
+    Write-Output ('- Disk: `{0}`' -f (Convert-CellValue (Get-MapValue -Map $Data -Key "dsk")))
 
     $entriesRaw = Get-MapValue -Map $Data -Key "entries"
     $entries = @($entriesRaw)
 
     if ($entries.Count -eq 0) {
-        Write-Output "No hay archivos en el disco."
+        Write-Output "No files on disk."
         Write-Output ""
     } else {
         $rows = @()
@@ -237,10 +237,10 @@ function Write-CatMarkdown {
                 $attrs
             )
         }
-        Write-MarkdownTable -Headers @("Archivo", "Usuario", "Carga", "Ejec", "Tamano", "Attr") -Rows $rows
+        Write-MarkdownTable -Headers @("File", "User", "Load", "Exec", "Size", "Attr") -Rows $rows
     }
 
-    Write-KeyValueTable -Title "Espacio" -Map @{
+    Write-KeyValueTable -Title "Space" -Map @{
         total_kb = (Get-MapValue -Map $Data -Key "total_kb")
         used_kb = (Get-MapValue -Map $Data -Key "used_kb")
         free_kb = (Get-MapValue -Map $Data -Key "free_kb")
@@ -259,7 +259,7 @@ function Write-PayloadMarkdown {
     $errors = @($Payload.errors)
 
     if (-not $ok) {
-        Write-Output "### Errores"
+        Write-Output "### Errors"
 
         $rows = @()
         foreach ($err in $errors) {
@@ -267,20 +267,20 @@ function Write-PayloadMarkdown {
         }
 
         if ($rows.Count -gt 0) {
-            Write-MarkdownTable -Headers @("Codigo", "Mensaje") -Rows $rows
+            Write-MarkdownTable -Headers @("Code", "Message") -Rows $rows
         } else {
-            Write-Output "Error sin detalle."
+            Write-Output "Error without details."
         }
         return
     }
 
     switch ($command) {
         "new" {
-            Write-KeyValueTable -Title "Resumen" -Map $data -PreferredKeys @("dsk", "total_kb", "used_kb", "free_kb")
+            Write-KeyValueTable -Title "Summary" -Map $data -PreferredKeys @("dsk", "total_kb", "used_kb", "free_kb")
             return
         }
         "free" {
-            Write-KeyValueTable -Title "Espacio libre" -Map $data -PreferredKeys @("dsk", "total_kb", "used_kb", "free_kb")
+            Write-KeyValueTable -Title "Free Space" -Map $data -PreferredKeys @("dsk", "total_kb", "used_kb", "free_kb")
             return
         }
         "cat" {
@@ -288,12 +288,12 @@ function Write-PayloadMarkdown {
             return
         }
         { $_ -in @("save", "get", "era") } {
-            Write-KeyValueTable -Title ("Resultado de {0}" -f $command) -Map $data -PreferredKeys @()
+            Write-KeyValueTable -Title ("Result: {0}" -f $command) -Map $data -PreferredKeys @()
             return
         }
         default {
             if (Has-MapKey -Map $data -Key "content") {
-                Write-Output "### Contenido"
+                Write-Output "### Content"
                 Write-Output '```text'
                 $content = Convert-CellValue (Get-MapValue -Map $data -Key "content")
                 if (-not [string]::IsNullOrEmpty($content)) {
@@ -302,15 +302,18 @@ function Write-PayloadMarkdown {
                 Write-Output '```'
                 Write-Output ""
 
-                Write-KeyValueTable -Title "Metadatos" -Map @{
-                    tipo = (Get-MapValue -Map $data -Key "content_type")
-                    lineas = (Get-MapValue -Map $data -Key "line_count")
-                    bytes = (Get-MapValue -Map $data -Key "bytes")
-                } -PreferredKeys @("tipo", "lineas", "bytes")
+                # METADATA TABLE - Commented out but can be re-enabled
+                # Uncomment the lines below to show content metadata
+                # Write-KeyValueTable -Title "Metadata" -Map @{
+                #     type = (Get-MapValue -Map $data -Key "content_type")
+                #     encoding = (Get-MapValue -Map $data -Key "encoding")
+                #     lines = (Get-MapValue -Map $data -Key "line_count")
+                #     bytes = (Get-MapValue -Map $data -Key "bytes")
+                # } -PreferredKeys @("type", "encoding", "lines", "bytes")
                 return
             }
 
-            Write-KeyValueTable -Title ("Resultado de {0}" -f $command) -Map $data -PreferredKeys @()
+            Write-KeyValueTable -Title ("Result: {0}" -f $command) -Map $data -PreferredKeys @()
             return
         }
     }
@@ -355,7 +358,7 @@ try {
         }
 
         if (-not $rendered -and -not [string]::IsNullOrWhiteSpace($stdoutText)) {
-            Write-Output "No se pudo formatear la salida de iaDSK."
+            Write-Output "Could not format iaDSK output."
         }
     }
 
