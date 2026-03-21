@@ -5,19 +5,19 @@
 [![Amstrad CPC](https://img.shields.io/badge/Amstrad-CPC-orange)](https://www.cpcwiki.eu/)
 [![Skills](https://img.shields.io/badge/skills.sh-available-purple)](https://skills.sh)
 
-> Professional skills for Amstrad CPC retro computing development
+> Skills profesionales para desarrollo de retro computing en Amstrad CPC
 
 ---
 
-## Installation
+## Instalación
 
-Install all skills:
+Instalar todas las skills:
 
 ```bash
 npx skills add CPCReady/skills
 ```
 
-Install a specific skill:
+Instalar una skill específica:
 
 ```bash
 npx skills add CPCReady/skills/dsk
@@ -25,82 +25,82 @@ npx skills add CPCReady/skills/dsk
 
 ---
 
-## Available Skills
+## Skills Disponibles
 
-### 🖥️ dsk - iaDSK Disk Image Editor
+### 🖥️ dsk - Editor de Imágenes de Disco iaDSK
 
-Automation for iaDSK, a command-line tool to create, edit, and manage Amstrad CPC `.dsk` disk images.
+Automatización para iaDSK, una herramienta de línea de comandos para crear, editar y gestionar imágenes de disco `.dsk` de Amstrad CPC.
 
-#### Features
-- Cross-platform support (Windows, macOS, Linux)
-- Embedded precompiled binaries
-- Human-readable Markdown output
-- JSON mode for automation
-- x64 and ARM64 architecture support
+#### Características
+- Soporte multiplataforma (Windows, macOS, Linux)
+- Binarios precompilados incluidos
+- Salida legible en formato Markdown
+- Modo JSON para automatización
+- Soporte para arquitecturas x64 y ARM64
 
-#### Use Cases
-- Creating or editing .dsk disk images
-- Managing files on Amstrad CPC disks
-- Extracting or injecting files into disk images
-- Working with retro computing projects
+#### Casos de Uso
+- Crear o editar imágenes de disco .dsk
+- Gestionar archivos en discos de Amstrad CPC
+- Extraer o inyectar archivos en imágenes de disco
+- Trabajar con proyectos de retro computing
 
-#### Available Commands
+#### Comandos Disponibles
 
-| Command | Description |
+| Comando | Descripción |
 |---------|-------------|
-| `help` | Show help |
-| `new` | Create new .dsk disk |
-| `cat` | List disk files |
-| `free` | Show free space |
-| `save` | Save file to disk |
-| `get` | Extract file from disk |
-| `era` | Delete file from disk |
-| `list` | Show content as list |
-| `basic` | Show BASIC file |
-| `ascii` | Show ASCII file |
-| `hex` | Show content in hexadecimal |
-| `disasm` | Disassemble Z80 code |
-| `dams` | Assemble with DAMS |
+| `help` | Mostrar ayuda |
+| `new` | Crear nuevo disco .dsk |
+| `cat` | Listar archivos del disco |
+| `free` | Mostrar espacio libre |
+| `save` | Guardar archivo en disco |
+| `get` | Extraer archivo del disco |
+| `era` | Eliminar archivo del disco |
+| `list` | Mostrar contenido como lista |
+| `basic` | Mostrar archivo BASIC |
+| `ascii` | Mostrar archivo ASCII |
+| `hex` | Mostrar contenido en hexadecimal |
+| `disasm` | Desensamblar código Z80 |
+| `dams` | Ensamblar con DAMS |
 
-#### File Types Supported
+#### Tipos de Archivo Soportados
 
-| Type | Code | Use |
-|------|------|-----|
-| ASCII | `A` | Text, documents |
-| Binary | `B` | Executables, data |
-| Raw | `R` | Raw data |
+| Tipo | Código | Uso |
+|------|--------|-----|
+| ASCII | `A` | Texto, documentos |
+| Binario | `B` | Ejecutables, datos |
+| Raw | `R` | Datos sin procesar |
 
-#### Example Prompts
+#### Ejemplos de Prompts
 
 ```
-"Create a new disk called game.dsk and add the file loader.bin to it"
-"List all files on the disk retro.dsk"
-"Extract all files from backup.dsk to the extraction folder"
-"Show the BASIC content of the MAIN.BAS file"
-"Disassemble the SPRITE.BIN file"
+"Crea un nuevo disco llamado game.dsk y añade el archivo loader.bin"
+"Lista todos los archivos del disco retro.dsk"
+"Extrae todos los archivos de backup.dsk a la carpeta extraction"
+"Muestra el contenido BASIC del archivo MAIN.BAS"
+"Desensambla el archivo SPRITE.BIN"
 ```
 
 ---
 
-## Usage
+## Uso
 
-### With OpenCode/Claude Code
+### Con OpenCode/Claude Code
 
-Simply mention the skill in your request:
+Simplemente menciona la skill en tu petición:
 
 ```
-"Use the dsk skill to show me what's on this disk image"
+"Usa la skill dsk para mostrarme qué hay en esta imagen de disco"
 ```
 
-The agent will automatically:
-1. Verify if iaDSK is available
-2. Install iaDSK if needed (using platform-specific scripts)
-3. Execute your requested operation
-4. Return results in readable format
+El agente automáticamente:
+1. Verificará si iaDSK está disponible
+2. Instalará iaDSK si es necesario (usando scripts específicos de cada plataforma)
+3. Ejecutará la operación solicitada
+4. Devolverá los resultados en formato legible
 
-### Platform-Specific Installation
+### Instalación Específica por Plataforma
 
-The dsk skill includes automated installation scripts:
+La skill dsk incluye scripts de instalación automatizados:
 
 **macOS / Linux:**
 ```bash
@@ -112,37 +112,37 @@ The dsk skill includes automated installation scripts:
 .\skills\dsk\scripts\install_iadsk.ps1
 ```
 
-### Output Formats
+### Formatos de Salida
 
-- **Markdown** (default): Human-readable output for interactive use
-- **JSON**: Add `--format json` for programmatic parsing
+- **Markdown** (por defecto): Salida legible para uso interactivo
+- **JSON**: Añade `--format json` para procesamiento programático
 
 ---
 
-## Repository Structure
+## Estructura del Repositorio
 
 ```
 CPCReady/skills/
-├── .claude-plugin/          # Marketplace configuration
+├── .claude-plugin/          # Configuración del marketplace
 │   └── marketplace.json
-├── skills/                  # Individual skills
-│   └── dsk/                # iaDSK disk editor
-│       ├── SKILL.md        # Skill instructions for agents
-│       ├── agents/         # Helper agents
-│       ├── assets/         # Precompiled iaDSK binaries
-│       ├── references/     # iaDSK documentation
-│       └── scripts/        # Installation & execution scripts
+├── skills/                  # Skills individuales
+│   └── dsk/                # Editor de discos iaDSK
+│       ├── SKILL.md        # Instrucciones de la skill para agentes
+│       ├── agents/         # Agentes auxiliares
+│       ├── assets/         # Binarios precompilados de iaDSK
+│       ├── references/     # Documentación de iaDSK
+│       └── scripts/        # Scripts de instalación y ejecución
 ├── .gitignore
-├── LICENSE                 # MIT License
-├── README.md              # This file
-└── plugin.json            # Plugin metadata
+├── LICENSE                 # Licencia MIT
+├── README.md              # Este archivo
+└── plugin.json            # Metadatos del plugin
 ```
 
 ---
 
-## Supported Platforms
+## Plataformas Soportadas
 
-These skills work with:
+Estas skills funcionan con:
 
 - [OpenCode](https://opencode.ai/)
 - [Claude Code](https://claude.com/product/claude-code)
@@ -150,21 +150,21 @@ These skills work with:
 - [Cursor](https://cursor.sh)
 - [Windsurf](https://codeium.com/windsurf)
 - [Cline](https://cline.bot/)
-- Any other agent that supports the [Agent Skills standard](https://agentskills.io)
+- Cualquier otro agente que soporte el [estándar Agent Skills](https://agentskills.io)
 
 ---
 
-## About Amstrad CPC
+## Acerca de Amstrad CPC
 
-The Amstrad CPC was a home personal computer released in 1984, very popular in Europe. It uses 3-inch floppy disks and has a vast library of classic software. These skills help modern developers work with CPC disk images and development tools.
+El Amstrad CPC fue un ordenador personal doméstico lanzado en 1984, muy popular en Europa. Utiliza disquetes de 3 pulgadas y tiene una vasta biblioteca de software clásico. Estas skills ayudan a los desarrolladores modernos a trabajar con imágenes de disco CPC y herramientas de desarrollo.
 
 ---
 
-## Troubleshooting
+## Resolución de Problemas
 
 ### Error: "iaDSK not found"
 
-The skill includes embedded binaries. The installation script should run automatically, but you can manually trigger it:
+La skill incluye binarios embebidos. El script de instalación debería ejecutarse automáticamente, pero puedes activarlo manualmente:
 
 ```bash
 # macOS/Linux
@@ -176,50 +176,50 @@ The skill includes embedded binaries. The installation script should run automat
 
 ### Error: "Permission denied"
 
-Make the scripts executable:
+Haz que los scripts sean ejecutables:
 
 ```bash
 chmod +x skills/dsk/scripts/install_iadsk.sh
 chmod +x skills/dsk/scripts/run_iadsk.sh
 ```
 
-### Verify Installation
+### Verificar Instalación
 
 ```bash
 ./skills/dsk/scripts/run_iadsk.sh -- help
 ```
 
-Should display help without errors.
+Debería mostrar la ayuda sin errores.
 
 ---
 
-## Resources
+## Recursos
 
-- **iaDSK Repository**: https://github.com/ABCronosMods/iaDSK
-- **iaDSK Documentation**: https://github.com/ABCronosMods/iaDSK/tree/main/doc
+- **Repositorio iaDSK**: https://github.com/ABCronosMods/iaDSK
+- **Documentación iaDSK**: https://github.com/ABCronosMods/iaDSK/tree/main/doc
 - **Amstrad CPC Wiki**: https://www.cpcwiki.eu/
 
 ---
 
-## Contributing
+## Contribuir
 
-Contributions are welcome! If you'd like to add a new skill or improve an existing one:
+¡Las contribuciones son bienvenidas! Si quieres añadir una nueva skill o mejorar una existente:
 
-1. Fork this repository
-2. Create a new skill directory under `skills/`
-3. Add your `SKILL.md` with proper YAML frontmatter
-4. Update `.claude-plugin/marketplace.json` to include your skill
-5. Test locally before submitting
-6. Submit a pull request
+1. Haz fork de este repositorio
+2. Crea un nuevo directorio de skill bajo `skills/`
+3. Añade tu `SKILL.md` con el frontmatter YAML apropiado
+4. Actualiza `.claude-plugin/marketplace.json` para incluir tu skill
+5. Prueba localmente antes de enviar
+6. Envía un pull request
 
-See [Agent Skills specification](https://agentskills.io) for skill creation guidelines.
-
----
-
-## License
-
-MIT License - See [LICENSE](LICENSE) for details.
+Consulta la [especificación Agent Skills](https://agentskills.io) para directrices de creación de skills.
 
 ---
 
-*Part of the [CPCReady](https://github.com/CPCReady) organization*
+## Licencia
+
+Licencia MIT - Ver [LICENSE](LICENSE) para más detalles.
+
+---
+
+*Parte de la organización [CPCReady](https://github.com/CPCReady)*
