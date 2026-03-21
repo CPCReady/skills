@@ -1,0 +1,22 @@
+{
+  "name": "amstrad-tools",
+  "description": "Collection of tools for Amstrad CPC retro computing development",
+  "version": "1.0.0",
+  "author": {
+    "name": "CPCReady",
+    "url": "https://github.com/CPCReady"
+  },
+  "homepage": "https://github.com/CPCReady/skills",
+  "repository": "https://github.com/CPCReady/skills",
+  "license": "MIT",
+  "keywords": [
+    "amstrad",
+    "cpc",
+    "retro-computing",
+    "disk-image",
+    "iadsk",
+    "z80",
+    "8-bit"
+  ],
+  "skills": "./skills/"
+}

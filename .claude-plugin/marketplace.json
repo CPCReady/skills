@@ -1,0 +1,22 @@
+{
+  "name": "amstrad-cpc-skills",
+  "owner": {
+    "name": "CPCReady",
+    "email": "contact@cpcready.com"
+  },
+  "metadata": {
+    "description": "Skills for Amstrad CPC retro computing development",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "amstrad-tools",
+      "description": "Collection of tools for Amstrad CPC retro computing including disk image editors, assemblers, and development utilities",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/dsk"
+      ]
+    }
+  ]
+}

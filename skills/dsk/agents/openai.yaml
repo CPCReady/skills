@@ -1,0 +1,4 @@
+interface:
+  display_name: "dsk"
+  short_description: "Instala y usa iaDSK en Windows, Linux y macOS"
+  default_prompt: "Usa $dsk para instalar iaDSK y ejecutar comandos DSK en el sistema operativo actual."
