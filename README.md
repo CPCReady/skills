@@ -53,6 +53,15 @@ Professional skills for Amstrad CPC retro computing development:
 
 ---
 
+## Security
+
+This package includes pre-compiled binaries for cross-platform compatibility. See [SECURITY.md](SECURITY.md) for:
+- Binary checksums and verification
+- Source code transparency
+- Security audit information
+
+---
+
 ## License
 
 MIT License - See [LICENSE](LICENSE) for details.
