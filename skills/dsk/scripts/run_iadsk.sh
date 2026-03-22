@@ -56,6 +56,113 @@ if [[ ${#args[@]} -eq 0 ]]; then
 	args=(help)
 fi
 
+is_binary_file() {
+	local file="$1"
+	if [[ ! -f "$file" ]]; then
+		return 1
+	fi
+	if file "$file" 2>/dev/null | grep -qi "text\|ascii"; then
+		return 1
+	fi
+	local ext="${file##*.}"
+	ext="${ext,,}"
+	case "$ext" in
+	bas | txt | asm | s | inc | h)
+		return 1
+		;;
+	*)
+		return 0
+		;;
+	esac
+}
+
+prompt_for_addresses() {
+	local file="$1"
+	local load_addr=""
+	local exec_addr=""
+
+	echo "### Añadir archivo binario" >&2
+	echo "" >&2
+	echo "Archivo: \`$file\`" >&2
+	echo "" >&2
+	echo "Para archivos binarios es necesario indicar las direcciones AMSDOS." >&2
+	echo "" >&2
+
+	read -r -p "Dirección de carga (Load) en hexadecimal [0x4000]: " load_addr
+	load_addr="${load_addr:-0x4000}"
+
+	read -r -p "Dirección de ejecución (Exec) en hexadecimal [0x4000]: " exec_addr
+	exec_addr="${exec_addr:-0x4000}"
+
+	echo "$load_addr $exec_addr"
+}
+
+process_save_command() {
+	local new_args=()
+	local has_save=false
+	local has_file=false
+	local has_load=false
+	local has_exec=false
+	local file_path=""
+	local save_index=-1
+
+	for i in "${!args[@]}"; do
+		case "${args[$i]}" in
+		save)
+			has_save=true
+			save_index=$i
+			new_args+=("${args[$i]}")
+			;;
+		--file)
+			has_file=true
+			file_path="${args[$((i + 1))]:-}"
+			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
+			;;
+		--load-addr)
+			has_load=true
+			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
+			;;
+		--exec-addr)
+			has_exec=true
+			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
+			;;
+		*)
+			new_args+=("${args[$i]}")
+			;;
+		esac
+	done
+
+	if [[ "$has_save" == true && "$has_file" == true && -n "$file_path" ]]; then
+		if is_binary_file "$file_path" && [[ "$has_load" == false || "$has_exec" == false ]]; then
+			if [[ -t 0 ]]; then
+				echo "" >&2
+				echo "Detectado archivo binario sin direcciones AMSDOS." >&2
+				echo "" >&2
+
+				if [[ "$has_load" == false ]]; then
+					read -r -p "Dirección de carga (--load-addr) [0x4000]: " load_input
+					load_input="${load_input:-0x4000}"
+					new_args+=("--load-addr" "$load_input")
+				fi
+
+				if [[ "$has_exec" == false ]]; then
+					read -r -p "Dirección de ejecución (--exec-addr) [0x4000]: " exec_input
+					exec_input="${exec_input:-0x4000}"
+					new_args+=("--exec-addr" "$exec_input")
+				fi
+
+				echo "" >&2
+			else
+				new_args+=("--load-addr" "0x4000" "--exec-addr" "0x4000")
+			fi
+		fi
+	fi
+
+	args=("${new_args[@]}")
+}
+
+process_save_command
+
 resolve_platform() {
 	local uname_s uname_m
 	uname_s="$(uname -s)"

@@ -34,6 +34,7 @@ import argparse
 import math
 import json
 import os
+import subprocess
 from typing import List, Union
 
 AMSDOS_BAS_TYPE = 0
@@ -47,6 +48,74 @@ DEF_WRITE_SPEED = 2000  # 1000 is another common value
 DEF_PAUSE_HEADER = 15  # ms
 DEF_PAUSE_DATA = 2560  # ms
 DEF_PAUSE_FILE = 12000  # ms
+
+
+def is_binary_file(filepath: str) -> bool:
+    """Check if a file is binary (not text)."""
+    if not os.path.isfile(filepath):
+        return False
+    try:
+        result = subprocess.run(
+            ["file", "--mime-type", "-b", filepath],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        mime = result.stdout.strip().lower()
+        if "text" in mime or "application/json" in mime:
+            return False
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        pass
+    ext = os.path.splitext(filepath)[1].lower()
+    text_extensions = {".bas", ".txt", ".asm", ".s", ".inc", ".h", ".c", ".py"}
+    if ext in text_extensions:
+        return False
+    return True
+
+
+def prompt_for_addresses(filepath: str) -> tuple:
+    """Prompt user for load and start addresses. Returns (load_addr, start_addr)."""
+    print("\n--- Añadir archivo binario ---")
+    print(f"Archivo: {filepath}")
+    print("Para archivos binarios es necesario indicar las direcciones AMSDOS.\n")
+
+    load_addr = input("Dirección de carga (--load-addr) [0x4000]: ").strip() or "0x4000"
+    start_addr = (
+        input("Dirección de ejecución (--start-addr) [0x4000]: ").strip() or "0x4000"
+    )
+
+    return load_addr, start_addr
+
+
+def check_binary_file_prompt(args):
+    """Check if save command needs address prompts for binary files."""
+    if getattr(args, "command", None) != "save":
+        return args
+
+    filepath = getattr(args, "file", None)
+    if not filepath or not os.path.exists(filepath):
+        return args
+
+    if is_binary_file(filepath):
+        has_load = getattr(args, "load_addr", None) is not None
+        has_start = getattr(args, "start_addr", None) is not None
+
+        if not has_load or not has_start:
+            if os.isatty(sys.stdin.fileno()):
+                print("\n[ia2cdt] Detectado archivo binario sin direcciones AMSDOS.")
+                load_addr, start_addr = prompt_for_addresses(filepath)
+
+                if not has_load:
+                    args.load_addr = aux_int(load_addr)
+                if not has_start:
+                    args.start_addr = aux_int(start_addr)
+            else:
+                if not has_load:
+                    args.load_addr = 0x4000
+                if not has_start:
+                    args.start_addr = 0x4000
+
+    return args
 
 
 class OutputFormatter:
@@ -1577,6 +1646,9 @@ def process_args():
 def main():
     """Main entry point with subcommand dispatch."""
     args = process_args()
+
+    # Check if binary file needs address prompts
+    args = check_binary_file_prompt(args)
 
     # Dispatch to command handler
     commands = {"new": cmd_new, "cat": cmd_cat, "check": cmd_check, "save": cmd_save}

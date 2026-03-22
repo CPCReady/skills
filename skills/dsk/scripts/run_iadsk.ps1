@@ -338,6 +338,113 @@ function Write-PayloadMarkdown {
     }
 }
 
+function Test-BinaryFile {
+    param([string]$FilePath)
+
+    if (-not (Test-Path -LiteralPath $FilePath)) {
+        return $false
+    }
+
+    try {
+        $mime = (Get-Content -LiteralPath $FilePath -Raw -TotalCount 8000 -ErrorAction SilentlyContinue)
+        if ($mime -match '[^\x09\x0A\x0D\x20-\x7E]') {
+            return $true
+        }
+    } catch {}
+
+    $ext = [System.IO.Path]::GetExtension($FilePath).ToLowerInvariant()
+    $textExts = @(".bas", ".txt", ".asm", ".s", ".inc", ".h", ".c", ".py", ".json")
+    if ($ext -in $textExts) {
+        return $false
+    }
+
+    return $true
+}
+
+function Invoke-BinaryAddressPrompt {
+    param([string]$FilePath)
+
+    Write-Output ""
+    Write-Output "--- Añadir archivo binario ---"
+    Write-Output "Archivo: $FilePath"
+    Write-Output "Para archivos binarios es necesario indicar las direcciones AMSDOS."
+    Write-Output ""
+
+    $loadInput = Read-Host "Dirección de carga (--load-addr) [0x4000]"
+    if ([string]::IsNullOrWhiteSpace($loadInput)) {
+        $loadInput = "0x4000"
+    }
+
+    $execInput = Read-Host "Dirección de ejecución (--exec-addr) [0x4000]"
+    if ([string]::IsNullOrWhiteSpace($execInput)) {
+        $execInput = "0x4000"
+    }
+
+    return @($loadInput, $execInput)
+}
+
+function Get-ArgIndex {
+    param([string[]]$Args, [string]$Flag)
+
+    for ($i = 0; $i -lt $Args.Count; $i++) {
+        if ($Args[$i] -eq $Flag) {
+            return $i
+        }
+    }
+    return -1
+}
+
+function Invoke-SaveCommandCheck {
+    $cmdIndex = -1
+    for ($i = 0; $i -lt $IadskArgs.Count; $i++) {
+        if ($IadskArgs[$i] -eq "save") {
+            $cmdIndex = $i
+            break
+        }
+    }
+
+    if ($cmdIndex -eq -1) {
+        return
+    }
+
+    $fileIndex = Get-ArgIndex -Args $IadskArgs -Flag "--file"
+    if ($fileIndex -eq -1 -or $fileIndex + 1 -ge $IadskArgs.Count) {
+        return
+    }
+
+    $filePath = $IadskArgs[$fileIndex + 1]
+    if (-not (Test-Path -LiteralPath $filePath)) {
+        return
+    }
+
+    $hasLoad = (Get-ArgIndex -Args $IadskArgs -Flag "--load-addr") -ne -1
+    $hasExec = (Get-ArgIndex -Args $IadskArgs -Flag "--exec-addr") -ne -1
+
+    if ((Test-BinaryFile -FilePath $filePath) -and (-not $hasLoad -or -not $hasExec)) {
+        if ([Environment]::UserInteractive) {
+            Write-Output ""
+            Write-Output "[run_iadsk.ps1] Detectado archivo binario sin direcciones AMSDOS."
+            $addresses = Invoke-BinaryAddressPrompt -FilePath $filePath
+            if (-not $hasLoad) {
+                $IadskArgs += @("--load-addr", $addresses[0])
+            }
+            if (-not $hasExec) {
+                $IadskArgs += @("--exec-addr", $addresses[1])
+            }
+            Write-Output ""
+        } else {
+            if (-not $hasLoad) {
+                $IadskArgs += @("--load-addr", "0x4000")
+            }
+            if (-not $hasExec) {
+                $IadskArgs += @("--exec-addr", "0x4000")
+            }
+        }
+    }
+}
+
+Invoke-SaveCommandCheck
+
 try {
     $resolved = Resolve-IadskBinary -ExplicitPath $Binary
 } catch {
