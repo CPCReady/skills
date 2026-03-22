@@ -34,6 +34,10 @@ Professional skills for Amstrad CPC retro computing development:
   - Cross-platform (Windows, macOS, Linux)
   - Embedded binaries included
   - Human-readable Markdown output
+- **📼 cdt** - ia2cdt Tape Image Toolkit
+  - Build and inspect `.cdt`/`.tzx` cassette images
+  - Pure Python (no binaries) with advanced encoding options
+  - Markdown/JSON catalog output for automation
 
 ---
 

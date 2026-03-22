@@ -20,7 +20,8 @@ npx skills add CPCReady/skills
 Install a specific skill:
 
 ```bash
-npx skills add CPCReady/skills/dsk
+npx skills add CPCReady/skills/dsk   # Disk images
+npx skills add CPCReady/skills/cdt   # Tape images
 ```
 
 ---
@@ -196,6 +197,53 @@ Automation for iaDSK, a command-line tool to create, edit, and manage Amstrad CP
 ```
 "Show the DAMS source of sprite.asm from project.dsk"
 "Display routines.dam from game.dsk as DAMS assembly"
+```
+
+---
+
+### 📼 cdt - ia2cdt Tape Image Toolkit
+
+Automation layer for the new Python ia2cdt script. Create and validate Amstrad CPC cassette images (`.cdt`/`.tzx`) with subcommands, advanced encoding methods, and Markdown/JSON reporting.
+
+#### Features
+- Pure Python (no native binaries) – runs on Windows, macOS, Linux.
+- Subcommand CLI: `new`, `save`, `cat`, `check`.
+- Data methods: standard blocks, headerless, ZX Spectrum, and two custom split strategies.
+- Baud rate control (1000–6000) plus custom pauses.
+- Markdown + JSON output for catalog listings and automation pipelines.
+
+#### Use Cases
+- Build multi-stage tape loaders (fast BASIC + binary payloads).
+- Inject raw assets (screen dumps, music) without AMSDOS headers.
+- Export structured metadata for retro tooling or CI validation.
+- Validate third-party `.cdt` releases before distribution.
+
+#### Command Summary
+
+| Command | Description |
+|---------|-------------|
+| `new <cdt>` | Create a blank tape with initial pause |
+| `save <cdt> --file <path>` | Append a file with configurable encoding |
+| `cat <cdt> [--format json]` | List every block (Markdown or JSON) |
+| `check <cdt>` | Validate structure, headers, and CRCs |
+
+#### Data Methods
+
+| Method | Name | Notes |
+|--------|------|-------|
+| `0` | Blocks | CPC AMSDOS headers + payload (default) |
+| `1` | Headerless | Raw CPC block with CRC (direct RAM) |
+| `2` | Spectrum | ZX/Spectrum standard-speed format |
+| `3` | Two blocks 2K | First block 2048 bytes, rest of file after |
+| `4` | Two blocks 1B | First block 1 byte, rest of file after |
+
+#### Example Prompts
+```
+"Create a new tape named loader.cdt and add loader.bas at 6000 baud"
+"Append main.bin to build.cdt at load=0x4000 exec=0x4000"
+"Add screen.scr to demo.cdt headerless at 0xC000"
+"Show the catalog of retro.cdt in JSON format"
+"Verify the integrity of competition.cdt"
 ```
 
 ---

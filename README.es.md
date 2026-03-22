@@ -20,7 +20,8 @@ npx skills add CPCReady/skills
 Instalar una skill específica:
 
 ```bash
-npx skills add CPCReady/skills/dsk
+npx skills add CPCReady/skills/dsk   # Discos
+npx skills add CPCReady/skills/cdt   # Cintas
 ```
 
 ---
@@ -196,6 +197,53 @@ Automatización para iaDSK, una herramienta de línea de comandos para crear, ed
 ```
 "Muestra el código fuente DAMS de sprite.asm de project.dsk"
 "Muestra routines.dam de game.dsk como ensamblador DAMS"
+```
+
+---
+
+### 📼 cdt - Toolkit de cintas ia2cdt
+
+Automatiza el nuevo script Python ia2cdt para crear y validar imágenes de cassette Amstrad CPC (`.cdt`/`.tzx`). Todo se ejecuta con Python 3, sin instaladores ni binarios externos.
+
+#### Características
+- CLI con subcomandos (`new`, `save`, `cat`, `check`).
+- Métodos de datos avanzados: bloques estándar, headerless, Spectrum, splits 2K y 1B.
+- Control de baudios 1000–6000 y pausas personalizadas.
+- Salidas Markdown y JSON listas para documentación o CI.
+- Lectura y escritura en una sola herramienta.
+
+#### Casos de Uso
+- Generar cintas multi-etapa (loader rápido + payload binario).
+- Inyectar pantallas o recursos sin cabecera AMSDOS.
+- Exportar inventarios JSON para pipelines de liberación.
+- Validar `.cdt` de terceros antes de distribuirlos.
+
+#### Resumen de Comandos
+
+| Comando | Descripción |
+|---------|-------------|
+| `new <cdt>` | Crea una cinta vacía |
+| `save <cdt> --file <ruta>` | Añade archivo con parámetros avanzados |
+| `cat <cdt> [--format json]` | Lista los bloques |
+| `check <cdt>` | Comprueba formato y CRC |
+
+#### Métodos de datos
+
+| Método | Nombre | Notas |
+|--------|--------|-------|
+| `0` | Blocks | Formato CPC con cabecera AMSDOS |
+| `1` | Headerless | Bloque CPC sin cabecera (RAM directa) |
+| `2` | Spectrum | Formato estándar ZX (flag + checksum) |
+| `3` | Two blocks 2K | 2048 bytes iniciales + resto |
+| `4` | Two blocks 1B | Primer byte aislado + resto |
+
+#### Ejemplos de Prompts
+```
+"Crea una cinta loader.cdt y añade loader.bas a 6000 baudios"
+"Añade main.bin a build.cdt con load=0x4000 exec=0x4000"
+"Inserta screen.scr en demo.cdt como headerless en 0xC000"
+"Muestra el catálogo de retro.cdt en formato JSON"
+"Valida la integridad de competition.cdt"
 ```
 
 ---
