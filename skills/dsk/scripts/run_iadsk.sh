@@ -65,8 +65,9 @@ is_binary_file() {
 		return 1
 	fi
 	local ext="${file##*.}"
-	ext="${ext,,}"
-	case "$ext" in
+	local ext_lower
+	ext_lower="$(echo "$ext" | tr '[:upper:]' '[:lower:]')"
+	case "$ext_lower" in
 	bas | txt | asm | s | inc | h)
 		return 1
 		;;
