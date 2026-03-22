@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 CDT.PY by Javier Garcia
 
