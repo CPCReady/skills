@@ -76,25 +76,20 @@ is_binary_file() {
 	esac
 }
 
-prompt_for_addresses() {
+prompt_for_load_address() {
 	local file="$1"
-	local load_addr=""
-	local exec_addr=""
 
 	echo "### Añadir archivo binario" >&2
 	echo "" >&2
 	echo "Archivo: \`$file\`" >&2
 	echo "" >&2
-	echo "Para archivos binarios es necesario indicar las direcciones AMSDOS." >&2
+	echo "Para archivos binarios es necesario indicar la dirección de carga AMSDOS." >&2
 	echo "" >&2
 
-	read -r -p "Dirección de carga (Load) en hexadecimal [0x4000]: " load_addr
+	read -r -p "Dirección de carga (--load) en hexadecimal [0x4000]: " load_addr
 	load_addr="${load_addr:-0x4000}"
 
-	read -r -p "Dirección de ejecución (Exec) en hexadecimal [0x4000]: " exec_addr
-	exec_addr="${exec_addr:-0x4000}"
-
-	echo "$load_addr $exec_addr"
+	echo "$load_addr"
 }
 
 process_save_command() {
@@ -102,58 +97,43 @@ process_save_command() {
 	local has_save=false
 	local has_file=false
 	local has_load=false
-	local has_exec=false
 	local file_path=""
-	local save_index=-1
+	local i=0
 
-	for i in "${!args[@]}"; do
+	while [[ $i -lt ${#args[@]} ]]; do
 		case "${args[$i]}" in
 		save)
 			has_save=true
-			save_index=$i
 			new_args+=("${args[$i]}")
 			;;
 		--file)
 			has_file=true
 			file_path="${args[$((i + 1))]:-}"
 			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
+			((i++))
 			;;
-		--load-addr)
+		--load)
 			has_load=true
 			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
-			;;
-		--exec-addr)
-			has_exec=true
-			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
+			((i++))
 			;;
 		*)
 			new_args+=("${args[$i]}")
 			;;
 		esac
+		((i++))
 	done
 
 	if [[ "$has_save" == true && "$has_file" == true && -n "$file_path" ]]; then
-		if is_binary_file "$file_path" && [[ "$has_load" == false || "$has_exec" == false ]]; then
+		if is_binary_file "$file_path" && [[ "$has_load" == false ]]; then
 			if [[ -t 0 ]]; then
 				echo "" >&2
-				echo "Detectado archivo binario sin direcciones AMSDOS." >&2
-				echo "" >&2
-
-				if [[ "$has_load" == false ]]; then
-					read -r -p "Dirección de carga (--load-addr) [0x4000]: " load_input
-					load_input="${load_input:-0x4000}"
-					new_args+=("--load-addr" "$load_input")
-				fi
-
-				if [[ "$has_exec" == false ]]; then
-					read -r -p "Dirección de ejecución (--exec-addr) [0x4000]: " exec_input
-					exec_input="${exec_input:-0x4000}"
-					new_args+=("--exec-addr" "$exec_input")
-				fi
-
+				echo "Detectado archivo binario sin dirección de carga." >&2
+				load_addr=$(prompt_for_load_address "$file_path")
+				new_args+=("--load" "$load_addr")
 				echo "" >&2
 			else
-				new_args+=("--load-addr" "0x4000" "--exec-addr" "0x4000")
+				new_args+=("--load" "0x4000")
 			fi
 		fi
 	fi

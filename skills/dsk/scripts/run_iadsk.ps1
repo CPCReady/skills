@@ -361,26 +361,21 @@ function Test-BinaryFile {
     return $true
 }
 
-function Invoke-BinaryAddressPrompt {
+function Invoke-BinaryLoadPrompt {
     param([string]$FilePath)
 
     Write-Output ""
     Write-Output "--- Añadir archivo binario ---"
     Write-Output "Archivo: $FilePath"
-    Write-Output "Para archivos binarios es necesario indicar las direcciones AMSDOS."
+    Write-Output "Para archivos binarios es necesario indicar la dirección de carga AMSDOS."
     Write-Output ""
 
-    $loadInput = Read-Host "Dirección de carga (--load-addr) [0x4000]"
+    $loadInput = Read-Host "Dirección de carga (--load) [0x4000]"
     if ([string]::IsNullOrWhiteSpace($loadInput)) {
         $loadInput = "0x4000"
     }
 
-    $execInput = Read-Host "Dirección de ejecución (--exec-addr) [0x4000]"
-    if ([string]::IsNullOrWhiteSpace($execInput)) {
-        $execInput = "0x4000"
-    }
-
-    return @($loadInput, $execInput)
+    return $loadInput
 }
 
 function Get-ArgIndex {
@@ -417,28 +412,17 @@ function Invoke-SaveCommandCheck {
         return
     }
 
-    $hasLoad = (Get-ArgIndex -Args $IadskArgs -Flag "--load-addr") -ne -1
-    $hasExec = (Get-ArgIndex -Args $IadskArgs -Flag "--exec-addr") -ne -1
+    $hasLoad = (Get-ArgIndex -Args $IadskArgs -Flag "--load") -ne -1
 
-    if ((Test-BinaryFile -FilePath $filePath) -and (-not $hasLoad -or -not $hasExec)) {
+    if ((Test-BinaryFile -FilePath $filePath) -and (-not $hasLoad)) {
         if ([Environment]::UserInteractive) {
             Write-Output ""
-            Write-Output "[run_iadsk.ps1] Detectado archivo binario sin direcciones AMSDOS."
-            $addresses = Invoke-BinaryAddressPrompt -FilePath $filePath
-            if (-not $hasLoad) {
-                $IadskArgs += @("--load-addr", $addresses[0])
-            }
-            if (-not $hasExec) {
-                $IadskArgs += @("--exec-addr", $addresses[1])
-            }
+            Write-Output "[run_iadsk.ps1] Detectado archivo binario sin dirección de carga."
+            $loadAddr = Invoke-BinaryLoadPrompt -FilePath $filePath
+            $IadskArgs += @("--load", $loadAddr)
             Write-Output ""
         } else {
-            if (-not $hasLoad) {
-                $IadskArgs += @("--load-addr", "0x4000")
-            }
-            if (-not $hasExec) {
-                $IadskArgs += @("--exec-addr", "0x4000")
-            }
+            $IadskArgs += @("--load", "0x4000")
         }
     }
 }
