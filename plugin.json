@@ -21,10 +21,8 @@
   "skills": "./skills/",
   "security": {
     "binaries": {
-      "included": true,
-      "purpose": "Cross-platform iaDSK disk image editor binaries",
-      "platforms": ["linux-x64", "linux-arm64", "macos-x64", "macos-arm64", "windows-x64"],
-      "verification": "See SECURITY.md for checksums and source information"
+      "included": false,
+      "reason": "Replaced with Python scripts for zero security alerts"
     },
     "scripts": {
       "python": {

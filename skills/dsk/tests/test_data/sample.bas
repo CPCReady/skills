@@ -1,0 +1,6 @@
+10 REM Test BASIC File
+20 PRINT "Hello from iadsk.py"
+30 FOR I=1 TO 10
+40 PRINT I
+50 NEXT I
+60 END

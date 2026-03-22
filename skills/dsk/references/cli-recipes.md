@@ -1,87 +1,106 @@
-# Recetas CLI de iaDSK
+# Recetas CLI de iadsk.py
 
-## Patron general
+## Patrón general
 
-1. Ejecutar wrappers de la skill (`run_iadsk.sh` o `run_iadsk.ps1`).
-2. Por defecto, leer salida Markdown (titulo, tablas y bloques).
-3. Si necesitas parseo, usar modo JSON:
-   - shell: `--format json` (compat: `--raw-json`)
-   - PowerShell: `-Format json` (compat: `-RawJson`)
+1. Ejecutar iadsk.py directamente con Python:
+   ```bash
+   python3 scripts/iadsk.py demo.dsk --cat
+   ```
+2. Salida Markdown por defecto (legible para humanos).
+3. No hay modo JSON - solo Markdown.
 
-## Instalación desde binarios embebidos
+## Requisitos
 
-macOS/Linux:
-
-```bash
-./scripts/install_iadsk.sh
-```
-
-Windows:
-
-```powershell
-.\scripts\install_iadsk.ps1
-```
-
-No compila: copia el ejecutable adecuado desde `assets/bin/<plataforma>/`.
+- Python 3.6+
+- Solo stdlib (sin dependencias externas)
 
 ## Comandos frecuentes
 
-```bash
-iaDSK help
-iaDSK new --dsk demo.dsk
-iaDSK cat --dsk demo.dsk
-iaDSK free --dsk demo.dsk
-```
+### Crear y gestionar DSK
 
 ```bash
-iaDSK save --dsk demo.dsk --file programa.bas --type ascii
-iaDSK save --dsk demo.dsk --file loader.bin --type binary --load 8000 --exec 8000
-iaDSK get --dsk demo.dsk --file programa.bas --output ./programa.bas
-iaDSK era --dsk demo.dsk --file programa.bas
+# Crear DSK vacío
+python3 scripts/iadsk.py demo.dsk --new
+
+# Listar archivos en disco
+python3 scripts/iadsk.py demo.dsk --cat
+
+# Ver espacio libre
+python3 scripts/iadsk.py demo.dsk --free
+
+# Verificar formato DSK
+python3 scripts/iadsk.py demo.dsk --check
+
+# Info detallada del disco
+python3 scripts/iadsk.py demo.dsk --dump
 ```
+
+### Añadir archivos
 
 ```bash
-iaDSK list --dsk demo.dsk --file programa.bas
-iaDSK basic --dsk demo.dsk --file programa.bas --split-lines
-iaDSK ascii --dsk demo.dsk --file readme.txt
-iaDSK hex --dsk demo.dsk --file loader.bin
-iaDSK disasm --dsk demo.dsk --file loader.bin
-iaDSK dams --dsk demo.dsk --file source.dam
+# Añadir binario con header AMSDOS
+python3 scripts/iadsk.py demo.dsk --put-bin programa.bas
+
+# Añadir archivo ASCII (conversión automática \n -> \r\n)
+python3 scripts/iadsk.py demo.dsk --put-ascii readme.txt
+
+# Añadir archivo raw (sin header)
+python3 scripts/iadsk.py demo.dsk --put-raw datos.bin
+
+# Binario con direcciones específicas
+python3 scripts/iadsk.py demo.dsk --put-bin loader.bin --load-addr 0x4000 --start-addr 0x4000
 ```
 
-## Ejecucion con wrappers (recomendado)
+### Gestionar archivos
+
+```bash
+# Ver contenido de archivo (texto)
+python3 scripts/iadsk.py demo.dsk --list programa.bas
+
+# Ver contenido como hex dump
+python3 scripts/iadsk.py demo.dsk --list programa.bas --hex
+
+# Extraer archivo por índice
+python3 scripts/iadsk.py demo.dsk --get 0 --output ./programa.bas
+
+# Extraer sin header AMSDOS
+python3 scripts/iadsk.py demo.dsk --get 0 --no-header --output ./datos.bin
+
+# Borrar archivo
+python3 scripts/iadsk.py demo.dsk --era programa.bas
+```
+
+## Ejecución con wrappers (alternativa)
 
 macOS/Linux:
 
 ```bash
-./scripts/run_iadsk.sh -- new --dsk demo.dsk
-./scripts/run_iadsk.sh -- cat --dsk demo.dsk
-./scripts/run_iadsk.sh --format json -- cat --dsk demo.dsk
+./scripts/run_iadsk.sh -- demo.dsk --cat
+./scripts/run_iadsk.sh -- demo.dsk --free
 ```
 
 Windows:
 
 ```powershell
-.\scripts\run_iadsk.ps1 -- new --dsk demo.dsk
-.\scripts\run_iadsk.ps1 -- cat --dsk demo.dsk
-.\scripts\run_iadsk.ps1 -Format json -- cat --dsk demo.dsk
+.\scripts\run_iadsk.ps1 -- demo.dsk --cat
+.\scripts\run_iadsk.ps1 -- demo.dsk --free
 ```
 
-## Códigos de error típicos
+## Versión
 
-- `missing_option`
-- `unknown_option`
-- `unknown_command`
-- `dsk_read_error`
-- `dsk_invalid`
-- `file_not_found`
-- `file_exists`
-- `protected_file`
-- `removed_command`
+```bash
+python3 scripts/iadsk.py --version
+# Output: IADSK Tool Version 1.0.0
+```
 
-## Alias soportados
+## Códigos de salida
 
-- `import` -> `save`
-- `export` -> `get`
-- `rm` -> `era`
-- `disassemble` -> `disasm`
+- `0`: Éxito
+- `1`: Error (archivo no encontrado, formato inválido, etc.)
+
+## Notas
+
+- Los nombres de archivo son case-insensitive
+- Solo soporta discos single-sided (180KB)
+- Máximo 64 entradas de directorio
+- Máximo 16KB por archivo (automulti-entry para archivos más grandes)
