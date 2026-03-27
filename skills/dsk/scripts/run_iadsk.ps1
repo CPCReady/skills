@@ -361,6 +361,60 @@ function Test-BinaryFile {
     return $true
 }
 
+function Invoke-DskNamePrompt {
+    param([string]$Command)
+    
+    # Check if --dsk argument is present
+    $hasDsk = $false
+    for ($i = 0; $i -lt $IadskArgs.Count; $i++) {
+        if ($IadskArgs[$i] -eq "--dsk") {
+            $hasDsk = $true
+            break
+        }
+    }
+    
+    if ($hasDsk) {
+        return
+    }
+    
+    # Check if running in interactive mode
+    if ([Console]::IsInputRedirected) {
+        Write-Error "ERROR: El comando '$Command' requiere --dsk <nombre.dsk>`nEjemplo: --dsk demo.dsk"
+        exit 1
+    }
+    
+    # Prompt for DSK name
+    Write-Output ""
+    Write-Output "### Nombre de imagen DSK"
+    Write-Output ""
+    
+    $dskName = ""
+    while ($true) {
+        $dskName = Read-Host "Nombre del archivo DSK"
+        if (-not [string]::IsNullOrWhiteSpace($dskName)) {
+            # Add .dsk extension if not present
+            if ($dskName -notmatch '\.dsk$') {
+                $dskName = "$dskName.dsk"
+            }
+            break
+        }
+        Write-Output ""
+        Write-Output "⚠️  El nombre del archivo DSK es OBLIGATORIO. Por favor, ingresa un valor."
+        Write-Output ""
+    }
+    
+    # Insert --dsk argument into IadskArgs array
+    $newArgs = @()
+    $newArgs += $IadskArgs[0]  # command (save, new, cat, etc.)
+    $newArgs += "--dsk"
+    $newArgs += $dskName
+    # Add remaining args
+    for ($i = 1; $i -lt $IadskArgs.Count; $i++) {
+        $newArgs += $IadskArgs[$i]
+    }
+    $script:IadskArgs = $newArgs
+}
+
 function Invoke-BinaryLoadPrompt {
     param([string]$FilePath)
 
@@ -585,6 +639,20 @@ function Invoke-OverwriteCheck {
             Write-Output ""
             Write-Output "Operación cancelada por el usuario."
             exit 0
+        }
+    }
+}
+
+# Check if DSK name is required and prompt if missing
+if ($IadskArgs.Count -gt 0) {
+    $command = $IadskArgs[0]
+    switch ($command) {
+        { $_ -in @("help", "--help", "-h") } {
+            # help doesn't need --dsk
+        }
+        default {
+            # All other commands need --dsk
+            Invoke-DskNamePrompt -Command $command
         }
     }
 }

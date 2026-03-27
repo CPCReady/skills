@@ -1575,6 +1575,28 @@ def cmd_save(args):
     return 0
 
 
+def prompt_for_cdt_name(command: str) -> str:
+    """Prompt user for CDT filename if not provided. Returns CDT filename."""
+    if not os.isatty(sys.stdin.fileno()):
+        print(f"ERROR: El comando '{command}' requiere <archivo.cdt>", file=sys.stderr)
+        print("Ejemplo: python3 ia2cdt.py new demo.cdt", file=sys.stderr)
+        sys.exit(1)
+
+    print("\n### Nombre de imagen CDT\n", file=sys.stderr)
+
+    while True:
+        cdt_name = input("Nombre del archivo CDT: ").strip()
+        if cdt_name:
+            # Add .cdt extension if not present
+            if not cdt_name.endswith(".cdt"):
+                cdt_name = f"{cdt_name}.cdt"
+            return cdt_name
+        print(
+            "⚠️  El nombre del archivo CDT es OBLIGATORIO. Por favor, ingresa un valor.\n",
+            file=sys.stderr,
+        )
+
+
 def process_args():
     """Parse command-line arguments with subcommands."""
     parser = argparse.ArgumentParser(
@@ -1589,11 +1611,11 @@ def process_args():
 
     # Command: new
     parser_new = subparsers.add_parser("new", help="Create a new empty CDT file")
-    parser_new.add_argument("cdt_file", help="CDT file to create")
+    parser_new.add_argument("cdt_file", nargs="?", help="CDT file to create")
 
     # Command: cat
     parser_cat = subparsers.add_parser("cat", help="List CDT contents")
-    parser_cat.add_argument("cdt_file", help="CDT file to read")
+    parser_cat.add_argument("cdt_file", nargs="?", help="CDT file to read")
     parser_cat.add_argument(
         "--format",
         choices=["markdown", "json"],
@@ -1603,7 +1625,7 @@ def process_args():
 
     # Command: check
     parser_check = subparsers.add_parser("check", help="Verify CDT format integrity")
-    parser_check.add_argument("cdt_file", help="CDT file to check")
+    parser_check.add_argument("cdt_file", nargs="?", help="CDT file to check")
     parser_check.add_argument(
         "--format",
         choices=["markdown", "json"],
@@ -1613,7 +1635,7 @@ def process_args():
 
     # Command: save
     parser_save = subparsers.add_parser("save", help="Add a file to existing CDT")
-    parser_save.add_argument("cdt_file", help="CDT file to modify")
+    parser_save.add_argument("cdt_file", nargs="?", help="CDT file to modify")
     parser_save.add_argument("--file", required=True, help="File to add")
     parser_save.add_argument(
         "--name", help="Name displayed when loading (max 16 chars)"
@@ -1671,6 +1693,10 @@ def process_args():
     if not args.command:
         parser.print_help()
         sys.exit(1)
+
+    # Prompt for CDT filename if not provided
+    if not getattr(args, "cdt_file", None):
+        args.cdt_file = prompt_for_cdt_name(args.command)
 
     return args
 

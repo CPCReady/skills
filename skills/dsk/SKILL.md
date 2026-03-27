@@ -100,9 +100,32 @@ Aliases válidos:
 - `rm` -> `era`
 - `disassemble` -> `disasm`
 
-## Prompts interactivos al añadir archivos
+## Prompts interactivos
 
-Los wrappers (`run_iadsk.sh` y `run_iadsk.ps1`) incluyen **validaciones automáticas** para el comando `save`. Cuando el usuario ejecuta en modo interactivo (terminal con stdin), se presentan prompts para:
+Los wrappers (`run_iadsk.sh` y `run_iadsk.ps1`) incluyen **validaciones automáticas** cuando el usuario ejecuta en modo interactivo (terminal con stdin). Se presentan prompts para:
+
+### 0. Nombre de imagen DSK - OBLIGATORIO
+
+**Cuándo:** No se proporcionó `--dsk <archivo.dsk>` en ningún comando (excepto `help`).
+
+**Prompt:**
+```
+### Nombre de imagen DSK
+
+Nombre del archivo DSK:
+```
+
+- **OBLIGATORIO:** El usuario debe proporcionar un nombre de archivo DSK.
+- El prompt se repite hasta que se ingrese un nombre válido.
+- Si el nombre no termina en `.dsk`, se añade automáticamente la extensión.
+- **En modo no interactivo (pipes/automatización):** El comando falla con error si falta `--dsk`.
+
+**Ejemplo de error en modo no interactivo:**
+```bash
+echo "test" | ./scripts/run_iadsk.sh -- new
+# ERROR: El comando 'new' requiere --dsk <nombre.dsk>
+# Ejemplo: --dsk demo.dsk
+```
 
 ### 1. Verificación de sobrescritura
 
@@ -195,32 +218,36 @@ Para evitar prompts interactivos, proporciona **todos los parámetros explícita
   --type binary --load 0x8000 --exec 0x8000 --force
 ```
 
-## CRITICAL: Agent behavior for save command
+## CRITICAL: Agent behavior for DSK commands
 
-**NUNCA ASUMIR VALORES PARA --load Y --exec**
+**NUNCA ASUMIR NOMBRES DE ARCHIVOS DSK NI DIRECCIONES DE MEMORIA**
 
-Cuando el usuario solicita añadir un archivo binario a un DSK, el agente **DEBE**:
+Cuando el usuario solicita operar con un DSK, el agente **DEBE**:
 
-1. **NO proporcionar** `--load` ni `--exec` en el comando
-2. **Dejar que el wrapper solicite interactivamente** estas direcciones al usuario
-3. **Ejecutar el comando SIN estos parámetros** para activar los prompts interactivos
+1. **NO proporcionar** nombres de archivo DSK inventados (como `demo.dsk`, `disk.dsk`, etc.)
+2. **NO proporcionar** `--load` ni `--exec` para archivos binarios
+3. **Dejar que el wrapper solicite interactivamente** tanto el nombre del DSK como las direcciones al usuario
+4. **Ejecutar el comando SIN estos parámetros** para activar los prompts interactivos
 
 **INCORRECTO (NO HACER ESTO):**
 ```bash
-./scripts/run_iadsk.sh -- save --dsk demo.dsk --file program.bin --type binary --load 0x4000 --exec 0x4000
+./scripts/run_iadsk.sh -- new --dsk demo.dsk
+./scripts/run_iadsk.sh -- save --dsk demo.dsk --file program.bin --load 0x4000 --exec 0x4000
 ```
 
 **CORRECTO:**
 ```bash
-./scripts/run_iadsk.sh -- save --dsk demo.dsk --file program.bin
+./scripts/run_iadsk.sh -- new
+./scripts/run_iadsk.sh -- save --file program.bin
 ```
 
-El wrapper detectará automáticamente que es un archivo binario y solicitará:
+El wrapper solicitará interactivamente:
+- Nombre del archivo DSK (si no se proporciona `--dsk`)
 - Tipo de archivo (ascii/binary/raw)
 - Dirección de carga (--load) - OBLIGATORIO para binarios
 - Dirección de ejecución (--exec) - OBLIGATORIO para ejecutables
 
-**Excepciones:** Solo proporcionar `--load` y `--exec` si:
+**Excepciones:** Solo proporcionar estos parámetros si:
 - El usuario los especificó explícitamente en su solicitud
 - Se está ejecutando en modo no interactivo (automatización)
 

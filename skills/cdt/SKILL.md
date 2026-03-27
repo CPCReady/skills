@@ -161,9 +161,32 @@ Esta herramienta Python **extiende** la funcionalidad de `ia2cdt` (C) y `cdt.py`
 | Salida formato | Silencioso | print()         | Markdown + JSON        |
 | CLI moderna    | Flags      | Flags           | Subcomandos            |
 
-## Prompts interactivos al añadir archivos
+## Prompts interactivos
 
-`ia2cdt.py` incluye **validaciones automáticas** para el comando `save`. Cuando se ejecuta en modo interactivo (terminal con stdin), se presentan prompts para:
+`ia2cdt.py` incluye **validaciones automáticas** cuando se ejecuta en modo interactivo (terminal con stdin). Se presentan prompts para:
+
+### 0. Nombre de imagen CDT - OBLIGATORIO
+
+**Cuándo:** No se proporcionó el argumento posicional `<archivo.cdt>` en ningún comando.
+
+**Prompt:**
+```
+### Nombre de imagen CDT
+
+Nombre del archivo CDT:
+```
+
+- **OBLIGATORIO:** El usuario debe proporcionar un nombre de archivo CDT.
+- El prompt se repite hasta que se ingrese un nombre válido.
+- Si el nombre no termina en `.cdt`, se añade automáticamente la extensión.
+- **En modo no interactivo (pipes/automatización):** El comando falla con error si falta el nombre.
+
+**Ejemplo de error en modo no interactivo:**
+```bash
+echo "test" | python3 ia2cdt.py new
+# ERROR: El comando 'new' requiere <archivo.cdt>
+# Ejemplo: python3 ia2cdt.py new demo.cdt
+```
 
 ### 1. Dirección de carga (load address) - OBLIGATORIO
 
@@ -225,31 +248,35 @@ python3 ia2cdt.py save demo.cdt --file program.bin \
   --load-addr 0x8000 --start-addr 0x8000 --type bin --baud 2000
 ```
 
-## CRITICAL: Agent behavior for save command
+## CRITICAL: Agent behavior for CDT commands
 
-**NUNCA ASUMIR VALORES PARA --load-addr Y --start-addr**
+**NUNCA ASUMIR NOMBRES DE ARCHIVOS CDT NI DIRECCIONES DE MEMORIA**
 
-Cuando el usuario solicita añadir un archivo binario a un CDT, el agente **DEBE**:
+Cuando el usuario solicita operar con un CDT, el agente **DEBE**:
 
-1. **NO proporcionar** `--load-addr` ni `--start-addr` en el comando
-2. **Dejar que ia2cdt.py solicite interactivamente** estas direcciones al usuario
-3. **Ejecutar el comando SIN estos parámetros** para activar los prompts interactivos
+1. **NO proporcionar** nombres de archivo CDT inventados (como `demo.cdt`, `tape.cdt`, etc.)
+2. **NO proporcionar** `--load-addr` ni `--start-addr` para archivos binarios
+3. **Dejar que ia2cdt.py solicite interactivamente** tanto el nombre del CDT como las direcciones al usuario
+4. **Ejecutar el comando SIN estos parámetros** para activar los prompts interactivos
 
 **INCORRECTO (NO HACER ESTO):**
 ```bash
+python3 ia2cdt.py new demo.cdt
 python3 ia2cdt.py save demo.cdt --file program.bin --load-addr 0x4000 --start-addr 0x4000
 ```
 
 **CORRECTO:**
 ```bash
-python3 ia2cdt.py save demo.cdt --file program.bin
+python3 ia2cdt.py new
+python3 ia2cdt.py save --file program.bin
 ```
 
-ia2cdt.py detectará automáticamente que es un archivo binario y solicitará:
+ia2cdt.py solicitará interactivamente:
+- Nombre del archivo CDT (si no se proporciona el argumento posicional)
 - Dirección de carga (--load-addr) - OBLIGATORIO para binarios
 - Dirección de ejecución (--start-addr) - OBLIGATORIO para ejecutables
 
-**Excepciones:** Solo proporcionar `--load-addr` y `--start-addr` si:
+**Excepciones:** Solo proporcionar estos parámetros si:
 - El usuario los especificó explícitamente en su solicitud
 - Se está ejecutando en modo no interactivo (automatización)
 

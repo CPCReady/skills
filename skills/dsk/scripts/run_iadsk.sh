@@ -77,6 +77,60 @@ is_binary_file() {
 	esac
 }
 
+prompt_for_dsk_name() {
+	local command="$1"
+
+	# Check if --dsk argument is present
+	local has_dsk=false
+	for arg in "${args[@]}"; do
+		if [[ "$arg" == "--dsk" ]]; then
+			has_dsk=true
+			break
+		fi
+	done
+
+	if [[ "$has_dsk" == true ]]; then
+		return
+	fi
+
+	# Check if running in interactive mode
+	if [[ ! -t 0 ]]; then
+		echo "ERROR: El comando '$command' requiere --dsk <nombre.dsk>" >&2
+		echo "Ejemplo: --dsk demo.dsk" >&2
+		exit 1
+	fi
+
+	# Prompt for DSK name
+	echo "" >&2
+	echo "### Nombre de imagen DSK" >&2
+	echo "" >&2
+
+	local dsk_name=""
+	while true; do
+		read -r -p "Nombre del archivo DSK: " dsk_name
+		if [[ -n "$dsk_name" ]]; then
+			# Add .dsk extension if not present
+			if [[ ! "$dsk_name" =~ \.dsk$ ]]; then
+				dsk_name="${dsk_name}.dsk"
+			fi
+			break
+		fi
+		echo "⚠️  El nombre del archivo DSK es OBLIGATORIO. Por favor, ingresa un valor." >&2
+		echo "" >&2
+	done
+
+	# Insert --dsk argument into args array
+	local new_args=()
+	new_args+=("${args[0]}") # command (save, new, cat, etc.)
+	new_args+=("--dsk")
+	new_args+=("$dsk_name")
+	# Add remaining args
+	for ((i = 1; i < ${#args[@]}; i++)); do
+		new_args+=("${args[$i]}")
+	done
+	args=("${new_args[@]}")
+}
+
 prompt_for_load_address() {
 	local file="$1"
 
@@ -382,6 +436,20 @@ check_overwrite_if_needed() {
 		fi
 	fi
 }
+
+# Check if DSK name is required and prompt if missing
+if [[ ${#args[@]} -gt 0 ]]; then
+	command="${args[0]}"
+	case "$command" in
+	help | --help | -h)
+		# help doesn't need --dsk
+		;;
+	*)
+		# All other commands need --dsk
+		prompt_for_dsk_name "$command"
+		;;
+	esac
+fi
 
 process_save_command
 
