@@ -299,6 +299,32 @@ Manual checks (no pre-commit hooks configured):
 3. Test on both platforms if possible
 4. Update CLI reference if flags change
 
+### Working with Interactive Wrappers
+The DSK wrappers include interactive prompt functionality for the `save` command:
+
+**Key Principles:**
+- **Never assume default values** for binary file addresses (`--load`, `--exec`)
+- Let wrappers prompt users interactively for missing parameters
+- Only provide addresses if user explicitly specifies them
+- Non-interactive mode (pipes/automation) should fail with clear errors
+
+**Testing Interactive Prompts:**
+```bash
+# Test non-interactive failure (should ERROR)
+echo "test" | ./scripts/run_iadsk.sh -- save --dsk test.dsk --file program.bin
+
+# Test with explicit addresses (should succeed)
+./scripts/run_iadsk.sh -- save --dsk test.dsk --file program.bin --load 0x4000 --exec 0x4000
+```
+
+**When Adding New Prompts:**
+1. Implement in both `.sh` and `.ps1` with identical behavior
+2. Check for TTY/interactive mode: `[[ -t 0 ]]` (Bash) or `[Console]::IsInputRedirected` (PowerShell)
+3. Fail explicitly in non-interactive mode with helpful error message
+4. Loop prompts until valid input (no silent defaults)
+5. Update SKILL.md with prompt documentation
+6. Add examples to cli-recipes.md
+
 ## Troubleshooting
 
 **Python import errors:**
