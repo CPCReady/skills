@@ -11,6 +11,8 @@
 
 ## Installation
 
+### 1. Install Skills
+
 Install all skills:
 
 ```bash
@@ -23,6 +25,23 @@ Install a specific skill:
 npx skills add CPCReady/skills/dsk   # Disk images
 npx skills add CPCReady/skills/cdt   # Tape images
 ```
+
+### 2. Install Amstrad Agent (OpenCode only)
+
+If you're using OpenCode, install the Amstrad agent to get specialized assistance:
+
+```bash
+cd cpcready-skills  # or wherever you cloned this repo
+./install-agent.sh
+```
+
+The agent provides:
+- Intelligent command suggestions for DSK/CDT operations
+- Interactive prompts for safe parameter input
+- Context-aware help and troubleshooting
+- Never assumes dangerous default values
+
+**Note:** The agent installation is **optional** but **highly recommended** for OpenCode users. Other AI coding assistants will work with the skills directly.
 
 ---
 

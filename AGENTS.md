@@ -13,6 +13,26 @@ This guide provides coding conventions, commands, and patterns for agents workin
 - **cdt** — Python tool for CDT/TZX tape image management (`ia2cdt.py`)
 - **dsk** — Multi-platform binaries for DSK disk image management (`iaDSK`)
 
+### Agent Installation
+
+**Important:** Skills and agents are separate in OpenCode:
+
+1. **Skills** → Installed via `npx skills add CPCReady/skills`
+   - Installed to: `~/.agents/skills/`
+   - Contains: Tools, scripts, documentation
+   - Automatic installation
+
+2. **Agents** → Installed manually via `./install-agent.sh`
+   - Installed to: `~/.config/opencode/agents/amstrad.md`
+   - Contains: AI instructions, behavior rules
+   - Manual installation required (OpenCode only)
+
+**Why separate?**
+- Skills are portable across AI assistants (OpenCode, Claude Code, Cursor, etc.)
+- Agents are OpenCode-specific configuration
+- Users can use skills without agents (direct command execution)
+- Agent provides enhanced UX (interactive prompts, safety checks)
+
 ## Build, Test, and Lint Commands
 
 ### Current Status
