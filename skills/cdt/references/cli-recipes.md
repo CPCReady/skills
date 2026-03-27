@@ -121,6 +121,74 @@ ia2cdt.py save game.cdt --file menu.bin --pause-file 5000 --pause-data 1000
 
 ---
 
+## Interactive Mode with Prompts
+
+ia2cdt.py automatically detects binary files and prompts for missing parameters in interactive mode:
+
+### Adding Binary File with Prompts
+
+```bash
+python3 ia2cdt.py save game.cdt --file loader.bin
+```
+
+**Interaction:**
+```
+[ia2cdt] Detectado archivo binario sin direcciones AMSDOS.
+
+### Añadir archivo binario
+
+Archivo: `loader.bin`
+
+Para archivos binarios es OBLIGATORIO indicar la dirección de carga AMSDOS.
+
+Dirección de carga (--load-addr) en hexadecimal: 0x8000
+
+Dirección de ejecución (--start-addr) en hexadecimal.
+OBLIGATORIO para programas ejecutables. Dejar vacío solo para datos.
+
+Dirección de ejecución (--start-addr): 0x8000
+```
+
+**Note:** If the user doesn't enter a load address, the prompt will repeat until a valid value is provided.
+
+### Adding Data File (Non-Executable)
+
+```bash
+python3 ia2cdt.py save game.cdt --file sprites.bin
+```
+
+**Interaction:**
+```
+Dirección de carga (--load-addr) en hexadecimal: 0xA000
+
+Dirección de ejecución (--start-addr) en hexadecimal.
+OBLIGATORIO para programas ejecutables. Dejar vacío solo para datos.
+
+Dirección de ejecución (--start-addr): 
+¿Es este un archivo de datos (no ejecutable)? (s/n): s
+```
+
+(Uses load address 0xA000 as execution address)
+
+### Non-Interactive Mode - ERROR if --load-addr Missing
+
+```bash
+echo "test" | python3 ia2cdt.py save game.cdt --file program.bin
+# ERROR: Archivos binarios requieren --load-addr <dirección>.
+# Ejemplo: --load-addr 0x4000
+```
+
+### Avoid Prompts (Automated Mode)
+
+Provide all parameters explicitly to skip interactive prompts:
+
+```bash
+python3 ia2cdt.py save game.cdt --file program.bin \
+  --load-addr 0x8000 --start-addr 0x8000 --type bin --baud 2000
+```
+
+---
+
 ## Command: cat
 
 List all blocks in a CDT file with detailed information.

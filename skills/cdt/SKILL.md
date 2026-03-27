@@ -10,6 +10,7 @@ description: Crear y gestionar imágenes .cdt de cassette tape para Amstrad CPC 
 1. Verificar que Python 3 esté disponible en el sistema.
 2. Ejecutar directamente `ia2cdt.py` desde `scripts/` (no requiere instalación).
 3. Usar salida Markdown por defecto para humanos; activar JSON con `--format json` para parseo automático.
+4. **Para archivos binarios:** NUNCA asumir direcciones `--load-addr` o `--start-addr`. Dejar que ia2cdt.py las solicite interactivamente.
 
 ## Herramienta Python pura
 
@@ -159,6 +160,98 @@ Esta herramienta Python **extiende** la funcionalidad de `ia2cdt` (C) y `cdt.py`
 | Pausas custom  | ❌         | Fijas           | Totalmente custom      |
 | Salida formato | Silencioso | print()         | Markdown + JSON        |
 | CLI moderna    | Flags      | Flags           | Subcomandos            |
+
+## Prompts interactivos al añadir archivos
+
+`ia2cdt.py` incluye **validaciones automáticas** para el comando `save`. Cuando se ejecuta en modo interactivo (terminal con stdin), se presentan prompts para:
+
+### 1. Dirección de carga (load address) - OBLIGATORIO
+
+**Cuándo:** Archivo binario detectado y no se proporcionó `--load-addr`.
+
+**Prompt:**
+```
+### Añadir archivo binario
+
+Archivo: `program.bin`
+
+Para archivos binarios es OBLIGATORIO indicar la dirección de carga AMSDOS.
+
+Dirección de carga (--load-addr) en hexadecimal:
+```
+
+- **OBLIGATORIO:** El usuario debe proporcionar una dirección, no hay valor por defecto.
+- El prompt se repite hasta que se ingrese una dirección válida.
+- **En modo no interactivo (pipes/automatización):** El comando falla con error si falta `--load-addr`.
+
+### 2. Dirección de ejecución (start address) - OBLIGATORIO
+
+**Cuándo:** Archivo binario detectado y no se proporcionó `--start-addr`.
+
+**Prompt:**
+```
+Dirección de ejecución (--start-addr) en hexadecimal.
+OBLIGATORIO para programas ejecutables. Dejar vacío solo para datos.
+
+Dirección de ejecución (--start-addr):
+```
+
+- **OBLIGATORIO para ejecutables:** Si el archivo se ejecuta, debe tener dirección de ejecución.
+- Puede dejarse vacío solo si es un archivo de datos (gráficos, música, etc.).
+- Si se deja vacío, se pregunta si es archivo de datos; si confirma, usa la dirección de carga.
+- **En modo no interactivo:** Si falta, usa la dirección de carga como fallback.
+
+### Modo no interactivo
+
+Cuando stdin no es un terminal (pipes, automatizaciones), ia2cdt.py **NO usa valores por defecto**:
+
+- `--type`: auto-detectado si no se especifica
+- `--load-addr`: **FALLA con error si es binario y no se proporciona**
+- `--start-addr`: usa `--load-addr` como fallback (opcional)
+
+**Ejemplo de error en modo no interactivo:**
+```bash
+echo "data" | python3 ia2cdt.py save demo.cdt --file program.bin
+# ERROR: Archivos binarios requieren --load-addr <dirección>.
+# Ejemplo: --load-addr 0x4000
+```
+
+### Evitar prompts (modo automatizado)
+
+Para evitar prompts interactivos, proporciona **todos los parámetros explícitamente**:
+
+```bash
+python3 ia2cdt.py save demo.cdt --file program.bin \
+  --load-addr 0x8000 --start-addr 0x8000 --type bin --baud 2000
+```
+
+## CRITICAL: Agent behavior for save command
+
+**NUNCA ASUMIR VALORES PARA --load-addr Y --start-addr**
+
+Cuando el usuario solicita añadir un archivo binario a un CDT, el agente **DEBE**:
+
+1. **NO proporcionar** `--load-addr` ni `--start-addr` en el comando
+2. **Dejar que ia2cdt.py solicite interactivamente** estas direcciones al usuario
+3. **Ejecutar el comando SIN estos parámetros** para activar los prompts interactivos
+
+**INCORRECTO (NO HACER ESTO):**
+```bash
+python3 ia2cdt.py save demo.cdt --file program.bin --load-addr 0x4000 --start-addr 0x4000
+```
+
+**CORRECTO:**
+```bash
+python3 ia2cdt.py save demo.cdt --file program.bin
+```
+
+ia2cdt.py detectará automáticamente que es un archivo binario y solicitará:
+- Dirección de carga (--load-addr) - OBLIGATORIO para binarios
+- Dirección de ejecución (--start-addr) - OBLIGATORIO para ejecutables
+
+**Excepciones:** Solo proporcionar `--load-addr` y `--start-addr` si:
+- El usuario los especificó explícitamente en su solicitud
+- Se está ejecutando en modo no interactivo (automatización)
 
 ## Referencias adicionales
 

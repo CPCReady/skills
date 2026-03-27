@@ -75,14 +75,38 @@ def is_binary_file(filepath: str) -> bool:
 
 def prompt_for_addresses(filepath: str) -> tuple:
     """Prompt user for load and start addresses. Returns (load_addr, start_addr)."""
-    print("\n--- Añadir archivo binario ---")
-    print(f"Archivo: {filepath}")
-    print("Para archivos binarios es necesario indicar las direcciones AMSDOS.\n")
-
-    load_addr = input("Dirección de carga (--load-addr) [0x4000]: ").strip() or "0x4000"
-    start_addr = (
-        input("Dirección de ejecución (--start-addr) [0x4000]: ").strip() or "0x4000"
+    print("\n### Añadir archivo binario")
+    print(f"\nArchivo: `{filepath}`")
+    print(
+        "\nPara archivos binarios es OBLIGATORIO indicar la dirección de carga AMSDOS.\n"
     )
+
+    # Loop until valid load address is provided
+    while True:
+        load_addr = input("Dirección de carga (--load-addr) en hexadecimal: ").strip()
+        if load_addr:
+            break
+        print("⚠️  La dirección de carga es OBLIGATORIA. Por favor, ingresa un valor.\n")
+
+    print("\nDirección de ejecución (--start-addr) en hexadecimal.")
+    print("OBLIGATORIO para programas ejecutables. Dejar vacío solo para datos.\n")
+
+    # Loop until valid exec address is provided (can be empty for data files)
+    while True:
+        start_addr = input("Dirección de ejecución (--start-addr): ").strip()
+        if start_addr:
+            break
+        response = (
+            input("¿Es este un archivo de datos (no ejecutable)? (s/n): ")
+            .strip()
+            .lower()
+        )
+        if response in ["s", "y", "si", "yes"]:
+            start_addr = load_addr  # Use load address as fallback for data files
+            break
+        print(
+            "⚠️  Para programas ejecutables, la dirección de ejecución es OBLIGATORIA.\n"
+        )
 
     return load_addr, start_addr
 
@@ -102,6 +126,7 @@ def check_binary_file_prompt(args):
 
         if not has_load or not has_start:
             if os.isatty(sys.stdin.fileno()):
+                # Interactive mode: prompt for addresses
                 print("\n[ia2cdt] Detectado archivo binario sin direcciones AMSDOS.")
                 load_addr, start_addr = prompt_for_addresses(filepath)
 
@@ -110,10 +135,17 @@ def check_binary_file_prompt(args):
                 if not has_start:
                     args.start_addr = aux_int(start_addr)
             else:
+                # Non-interactive mode: FAIL with error if --load-addr is missing
                 if not has_load:
-                    args.load_addr = 0x4000
+                    print(
+                        "ERROR: Archivos binarios requieren --load-addr <dirección>.",
+                        file=sys.stderr,
+                    )
+                    print("Ejemplo: --load-addr 0x4000", file=sys.stderr)
+                    sys.exit(1)
+                # --start-addr is optional in non-interactive mode
                 if not has_start:
-                    args.start_addr = 0x4000
+                    args.start_addr = args.load_addr  # Use load address as fallback
 
     return args
 
