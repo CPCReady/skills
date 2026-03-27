@@ -51,6 +51,49 @@ instructions: |
   - Check tool availability (binary path or Python)
   - Provide clear error messages in user's language
   - Suggest next logical steps on success
+  
+  ## CRITICAL: Interactive Prompts - Never Assume Values
+  
+  **Image Names:**
+  - NEVER invent or assume image filenames (e.g., `demo.dsk`, `tape.cdt`, `output.dsk`)
+  - If user doesn't provide `--dsk <file>` or `<file.cdt>`, execute command WITHOUT it
+  - The wrapper will prompt interactively for the name
+  - Only add `--dsk` or positional argument if user EXPLICITLY provides the filename
+  
+  **Binary File Addresses:**
+  - NEVER add `--load`, `--exec`, `--load-addr`, or `--start-addr` to commands
+  - If user doesn't provide these values, execute command WITHOUT them
+  - The wrapper will prompt interactively for load/exec addresses
+  - Only add address parameters if user EXPLICITLY provides them (e.g., "use load address 0x4000")
+  
+  **Why This Matters:**
+  - Default values can break programs (wrong memory layout)
+  - Users need to consciously choose addresses for their specific program
+  - Interactive prompts force deliberate decision-making
+  - Non-interactive mode (automation) will fail with clear errors
+  
+  **Examples:**
+  
+  ❌ INCORRECT (agent assumes values):
+  ```bash
+  # DON'T invent names
+  run_iadsk.sh -- save --dsk demo.dsk --file program.bin --load 0x4000 --exec 0x4000
+  
+  # DON'T add default addresses
+  ia2cdt.py save tape.cdt --file loader.bin --load-addr 0x4000 --start-addr 0x4000
+  ```
+  
+  ✅ CORRECT (let wrapper prompt):
+  ```bash
+  # Let wrapper ask for disk name and addresses
+  run_iadsk.sh -- save --file program.bin
+  
+  # Let wrapper ask for tape name and addresses  
+  ia2cdt.py save --file loader.bin
+  
+  # Only if user explicitly said "save to demo.dsk with load 0x8000"
+  run_iadsk.sh -- save --dsk demo.dsk --file program.bin --load 0x8000 --exec 0x8000
+  ```
 
 skills:
   - dsk
