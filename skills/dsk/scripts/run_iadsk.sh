@@ -41,10 +41,10 @@ USAGE
 		exit 0
 		;;
 	*)
-		args+=("$1")
+		new_args+=("${args[$i]}")
 		;;
 	esac
-	shift
+	i=$((i + 1))
 done
 
 if [[ "$output_format" != "markdown" && "$output_format" != "json" ]]; then
@@ -84,13 +84,120 @@ prompt_for_load_address() {
 	echo "" >&2
 	echo "Archivo: \`$file\`" >&2
 	echo "" >&2
-	echo "Para archivos binarios es necesario indicar la dirección de carga AMSDOS." >&2
+	echo "Para archivos binarios es OBLIGATORIO indicar la dirección de carga AMSDOS." >&2
 	echo "" >&2
 
-	read -r -p "Dirección de carga (--load) en hexadecimal [0x4000]: " load_addr
-	load_addr="${load_addr:-0x4000}"
+	while true; do
+		read -r -p "Dirección de carga (--load) en hexadecimal: " load_addr
+		if [[ -n "$load_addr" ]]; then
+			echo "$load_addr"
+			return 0
+		fi
+		echo "ERROR: La dirección de carga es obligatoria para archivos binarios." >&2
+		echo "" >&2
+	done
+}
 
-	echo "$load_addr"
+prompt_for_exec_address() {
+	local file="$1"
+
+	echo "" >&2
+	echo "Dirección de ejecución (--exec) en hexadecimal." >&2
+	echo "OBLIGATORIO para programas ejecutables. Dejar vacío solo para datos." >&2
+	echo "" >&2
+
+	read -r -p "Dirección de ejecución (--exec): " exec_addr
+
+	echo "$exec_addr"
+}
+
+prompt_for_file_type() {
+	local file="$1"
+	local is_binary="$2"
+
+	echo "" >&2
+	echo "Tipo de archivo AMSDOS:" >&2
+	echo "  1) ascii   - Archivo de texto ASCII" >&2
+	echo "  2) binary  - Archivo binario con cabecera AMSDOS" >&2
+	echo "  3) raw     - Datos crudos sin cabecera" >&2
+	echo "" >&2
+
+	if [[ "$is_binary" == "true" ]]; then
+		read -r -p "Selecciona tipo [2]: " file_type
+		file_type="${file_type:-2}"
+	else
+		read -r -p "Selecciona tipo [1]: " file_type
+		file_type="${file_type:-1}"
+	fi
+
+	case "$file_type" in
+	1)
+		echo "ascii"
+		;;
+	2)
+		echo "binary"
+		;;
+	3)
+		echo "raw"
+		;;
+	*)
+		echo "binary"
+		;;
+	esac
+}
+
+check_file_exists_in_dsk() {
+	local dsk_file="$1"
+	local filename="$2"
+	local binary="$3"
+
+	if [[ ! -f "$dsk_file" ]]; then
+		return 1
+	fi
+
+	local tmp_cat
+	tmp_cat="$(mktemp)"
+
+	set +e
+	"$binary" cat --dsk "$dsk_file" >"$tmp_cat" 2>/dev/null
+	local status=$?
+	set -e
+
+	if [[ $status -ne 0 ]]; then
+		rm -f "$tmp_cat"
+		return 1
+	fi
+
+	local filename_upper
+	filename_upper="$(basename "$filename" | tr '[:lower:]' '[:upper:]')"
+
+	if grep -q "\"name\":\"$filename_upper\"" "$tmp_cat" 2>/dev/null; then
+		rm -f "$tmp_cat"
+		return 0
+	fi
+
+	rm -f "$tmp_cat"
+	return 1
+}
+
+prompt_for_overwrite() {
+	local filename="$1"
+
+	echo "" >&2
+	echo "⚠️  El archivo '$filename' ya existe en el disco." >&2
+	echo "" >&2
+
+	read -r -p "¿Deseas sobrescribir? (s/n) [n]: " overwrite
+	overwrite="${overwrite:-n}"
+
+	case "$overwrite" in
+	s | S | y | Y)
+		return 0
+		;;
+	*)
+		return 1
+		;;
+	esac
 }
 
 process_save_command() {
@@ -98,12 +205,18 @@ process_save_command() {
 	local has_save=false
 	local has_file=false
 	local has_load=false
+	local has_exec=false
+	local has_type=false
+	local has_force=false
+	local has_dsk=false
 	local file_path=""
+	local dsk_path=""
 	local i=0
 
+	# First pass: collect existing arguments
 	while [[ $i -lt ${#args[@]} ]]; do
 		case "${args[$i]}" in
-		save)
+		save | import)
 			has_save=true
 			new_args+=("${args[$i]}")
 			;;
@@ -111,35 +224,163 @@ process_save_command() {
 			has_file=true
 			file_path="${args[$((i + 1))]:-}"
 			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
-			((i++))
+			i=$((i + 1))
+			;;
+		--dsk)
+			has_dsk=true
+			dsk_path="${args[$((i + 1))]:-}"
+			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
+			i=$((i + 1))
 			;;
 		--load)
 			has_load=true
 			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
-			((i++))
+			i=$((i + 1))
+			;;
+		--exec)
+			has_exec=true
+			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
+			i=$((i + 1))
+			;;
+		--type)
+			has_type=true
+			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
+			i=$((i + 1))
+			;;
+		--force)
+			has_force=true
+			new_args+=("${args[$i]}")
 			;;
 		*)
 			new_args+=("${args[$i]}")
 			;;
 		esac
-		((i++))
+		i=$((i + 1))
 	done
 
-	if [[ "$has_save" == true && "$has_file" == true && -n "$file_path" ]]; then
-		if is_binary_file "$file_path" && [[ "$has_load" == false ]]; then
-			if [[ -t 0 ]]; then
-				echo "" >&2
-				echo "Detectado archivo binario sin dirección de carga." >&2
-				load_addr=$(prompt_for_load_address "$file_path")
-				new_args+=("--load" "$load_addr")
-				echo "" >&2
-			else
-				new_args+=("--load" "0x4000")
-			fi
+	# Only process if this is a save command with file specified
+	if [[ "$has_save" != true || "$has_file" != true || -z "$file_path" ]]; then
+		args=("${new_args[@]}")
+		return
+	fi
+
+	# Check if we're in interactive mode
+	local interactive=false
+	if [[ -t 0 ]]; then
+		interactive=true
+	fi
+
+	# Step 1: Determine if file is binary
+	local file_is_binary=false
+	if is_binary_file "$file_path"; then
+		file_is_binary=true
+	fi
+
+	# Step 2: Prompt for file type if not specified
+	if [[ "$has_type" == false && "$interactive" == true ]]; then
+		echo "" >&2
+		local file_type
+		file_type=$(prompt_for_file_type "$file_path" "$file_is_binary")
+		new_args+=("--type" "$file_type")
+	fi
+
+	# Step 3: For binary files, require load address
+	if [[ "$file_is_binary" == true && "$has_load" == false ]]; then
+		if [[ "$interactive" == true ]]; then
+			echo "" >&2
+			echo "Detectado archivo binario sin dirección de carga." >&2
+			local load_addr
+			load_addr=$(prompt_for_load_address "$file_path")
+			new_args+=("--load" "$load_addr")
+		else
+			echo "ERROR: Archivos binarios requieren --load <dirección>." >&2
+			echo "Ejemplo: --load 0x4000" >&2
+			exit 1
 		fi
 	fi
 
+	# Step 4: For binary files, prompt for exec address if not specified
+	if [[ "$file_is_binary" == true && "$has_exec" == false && "$interactive" == true ]]; then
+		local exec_addr
+		exec_addr=$(prompt_for_exec_address "$file_path")
+		if [[ -n "$exec_addr" ]]; then
+			new_args+=("--exec" "$exec_addr")
+		fi
+		echo "" >&2
+	fi
+
 	args=("${new_args[@]}")
+}
+
+check_overwrite_if_needed() {
+	local binary="$1"
+	local new_args=()
+	local has_save=false
+	local has_file=false
+	local has_dsk=false
+	local has_force=false
+	local file_path=""
+	local dsk_path=""
+	local i=0
+
+	# Parse arguments to check if this is a save command
+	while [[ $i -lt ${#args[@]} ]]; do
+		case "${args[$i]}" in
+		save | import)
+			has_save=true
+			new_args+=("${args[$i]}")
+			;;
+		--file)
+			has_file=true
+			file_path="${args[$((i + 1))]:-}"
+			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
+			i=$((i + 1))
+			;;
+		--dsk)
+			has_dsk=true
+			dsk_path="${args[$((i + 1))]:-}"
+			new_args+=("${args[$i]}" "${args[$((i + 1))]:-}")
+			i=$((i + 1))
+			;;
+		--force)
+			has_force=true
+			new_args+=("${args[$i]}")
+			;;
+		*)
+			new_args+=("${args[$i]}")
+			;;
+		esac
+		i=$((i + 1))
+	done
+
+	# Only check overwrite if this is a save command with file and dsk specified
+	if [[ "$has_save" != true || "$has_file" != true || "$has_dsk" != true ]]; then
+		return
+	fi
+
+	# Only check in interactive mode
+	if [[ ! -t 0 ]]; then
+		return
+	fi
+
+	# Skip if --force already provided
+	if [[ "$has_force" == true ]]; then
+		return
+	fi
+
+	# Check if file exists in DSK
+	local filename
+	filename="$(basename "$file_path")"
+
+	if check_file_exists_in_dsk "$dsk_path" "$filename" "$binary"; then
+		if prompt_for_overwrite "$filename"; then
+			args=("${new_args[@]}" "--force")
+		else
+			echo "" >&2
+			echo "Operación cancelada por el usuario." >&2
+			exit 0
+		fi
+	fi
 }
 
 process_save_command
@@ -383,6 +624,8 @@ PY
 }
 
 resolved_binary="$(resolve_binary)"
+
+check_overwrite_if_needed "$resolved_binary"
 
 tmp_out="$(mktemp)"
 tmp_err="$(mktemp)"

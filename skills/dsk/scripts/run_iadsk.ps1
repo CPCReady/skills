@@ -367,15 +367,104 @@ function Invoke-BinaryLoadPrompt {
     Write-Output ""
     Write-Output "--- Añadir archivo binario ---"
     Write-Output "Archivo: $FilePath"
-    Write-Output "Para archivos binarios es necesario indicar la dirección de carga AMSDOS."
+    Write-Output "Para archivos binarios es OBLIGATORIO indicar la dirección de carga AMSDOS."
     Write-Output ""
 
-    $loadInput = Read-Host "Dirección de carga (--load) [0x4000]"
-    if ([string]::IsNullOrWhiteSpace($loadInput)) {
-        $loadInput = "0x4000"
+    while ($true) {
+        $loadInput = Read-Host "Dirección de carga (--load) en hexadecimal"
+        if (-not [string]::IsNullOrWhiteSpace($loadInput)) {
+            return $loadInput
+        }
+        Write-Output ""
+        Write-Output "ERROR: La dirección de carga es obligatoria para archivos binarios."
+        Write-Output ""
+    }
+}
+
+function Invoke-ExecAddressPrompt {
+    param([string]$FilePath)
+
+    Write-Output ""
+    Write-Output "Dirección de ejecución (--exec) en hexadecimal."
+    Write-Output "OBLIGATORIO para programas ejecutables. Dejar vacío solo para datos."
+    Write-Output ""
+
+    $execInput = Read-Host "Dirección de ejecución (--exec)"
+    return $execInput
+}
+
+function Invoke-FileTypePrompt {
+    param([string]$FilePath, [bool]$IsBinary)
+
+    Write-Output ""
+    Write-Output "Tipo de archivo AMSDOS:"
+    Write-Output "  1) ascii   - Archivo de texto ASCII"
+    Write-Output "  2) binary  - Archivo binario con cabecera AMSDOS"
+    Write-Output "  3) raw     - Datos crudos sin cabecera"
+    Write-Output ""
+
+    if ($IsBinary) {
+        $typeInput = Read-Host "Selecciona tipo [2]"
+        if ([string]::IsNullOrWhiteSpace($typeInput)) {
+            $typeInput = "2"
+        }
+    } else {
+        $typeInput = Read-Host "Selecciona tipo [1]"
+        if ([string]::IsNullOrWhiteSpace($typeInput)) {
+            $typeInput = "1"
+        }
     }
 
-    return $loadInput
+    switch ($typeInput) {
+        "1" { return "ascii" }
+        "2" { return "binary" }
+        "3" { return "raw" }
+        default { return "binary" }
+    }
+}
+
+function Test-FileExistsInDsk {
+    param([string]$DskPath, [string]$FileName, [string]$BinaryPath)
+
+    if (-not (Test-Path -LiteralPath $DskPath)) {
+        return $false
+    }
+
+    $tmpCat = [System.IO.Path]::GetTempFileName()
+    try {
+        & $BinaryPath "cat" "--dsk" $DskPath 1> $tmpCat 2> $null
+        if ($LASTEXITCODE -ne 0) {
+            return $false
+        }
+
+        $catJson = Get-Content -LiteralPath $tmpCat -Raw
+        $filenameUpper = [System.IO.Path]::GetFileName($FileName).ToUpperInvariant()
+
+        if ($catJson -match "`"name`":`"$filenameUpper`"") {
+            return $true
+        }
+
+        return $false
+    } catch {
+        return $false
+    } finally {
+        Remove-Item -LiteralPath $tmpCat -ErrorAction SilentlyContinue
+    }
+}
+
+function Invoke-OverwritePrompt {
+    param([string]$FileName)
+
+    Write-Output ""
+    Write-Output "⚠️  El archivo '$FileName' ya existe en el disco."
+    Write-Output ""
+
+    $overwrite = Read-Host "¿Deseas sobrescribir? (s/n) [n]"
+    if ([string]::IsNullOrWhiteSpace($overwrite)) {
+        $overwrite = "n"
+    }
+
+    return ($overwrite -match "^[sySY]$")
 }
 
 function Get-ArgIndex {
@@ -392,7 +481,7 @@ function Get-ArgIndex {
 function Invoke-SaveCommandCheck {
     $cmdIndex = -1
     for ($i = 0; $i -lt $IadskArgs.Count; $i++) {
-        if ($IadskArgs[$i] -eq "save") {
+        if ($IadskArgs[$i] -eq "save" -or $IadskArgs[$i] -eq "import") {
             $cmdIndex = $i
             break
         }
@@ -413,16 +502,89 @@ function Invoke-SaveCommandCheck {
     }
 
     $hasLoad = (Get-ArgIndex -Args $IadskArgs -Flag "--load") -ne -1
+    $hasExec = (Get-ArgIndex -Args $IadskArgs -Flag "--exec") -ne -1
+    $hasType = (Get-ArgIndex -Args $IadskArgs -Flag "--type") -ne -1
+    $isInteractive = [Environment]::UserInteractive
 
-    if ((Test-BinaryFile -FilePath $filePath) -and (-not $hasLoad)) {
-        if ([Environment]::UserInteractive) {
+    $isBinary = Test-BinaryFile -FilePath $filePath
+
+    # Step 1: Prompt for file type if not specified
+    if (-not $hasType -and $isInteractive) {
+        Write-Output ""
+        $fileType = Invoke-FileTypePrompt -FilePath $filePath -IsBinary $isBinary
+        $IadskArgs += @("--type", $fileType)
+    }
+
+    # Step 2: For binary files, require load address
+    if ($isBinary -and (-not $hasLoad)) {
+        if ($isInteractive) {
             Write-Output ""
             Write-Output "[run_iadsk.ps1] Detectado archivo binario sin dirección de carga."
             $loadAddr = Invoke-BinaryLoadPrompt -FilePath $filePath
             $IadskArgs += @("--load", $loadAddr)
-            Write-Output ""
         } else {
-            $IadskArgs += @("--load", "0x4000")
+            [Console]::Error.WriteLine("ERROR: Archivos binarios requieren --load <dirección>.")
+            [Console]::Error.WriteLine("Ejemplo: --load 0x4000")
+            exit 1
+        }
+    }
+
+    # Step 3: For binary files, prompt for exec address if not specified
+    if ($isBinary -and (-not $hasExec) -and $isInteractive) {
+        $execAddr = Invoke-ExecAddressPrompt -FilePath $filePath
+        if (-not [string]::IsNullOrWhiteSpace($execAddr)) {
+            $IadskArgs += @("--exec", $execAddr)
+        }
+        Write-Output ""
+    }
+}
+
+function Invoke-OverwriteCheck {
+    param([string]$ResolvedBinary)
+
+    $cmdIndex = -1
+    for ($i = 0; $i -lt $IadskArgs.Count; $i++) {
+        if ($IadskArgs[$i] -eq "save" -or $IadskArgs[$i] -eq "import") {
+            $cmdIndex = $i
+            break
+        }
+    }
+
+    if ($cmdIndex -eq -1) {
+        return
+    }
+
+    $fileIndex = Get-ArgIndex -Args $IadskArgs -Flag "--file"
+    if ($fileIndex -eq -1 -or $fileIndex + 1 -ge $IadskArgs.Count) {
+        return
+    }
+
+    $dskIndex = Get-ArgIndex -Args $IadskArgs -Flag "--dsk"
+    if ($dskIndex -eq -1 -or $dskIndex + 1 -ge $IadskArgs.Count) {
+        return
+    }
+
+    $hasForce = (Get-ArgIndex -Args $IadskArgs -Flag "--force") -ne -1
+    if ($hasForce) {
+        return
+    }
+
+    $isInteractive = [Environment]::UserInteractive
+    if (-not $isInteractive) {
+        return
+    }
+
+    $filePath = $IadskArgs[$fileIndex + 1]
+    $dskPath = $IadskArgs[$dskIndex + 1]
+    $fileName = [System.IO.Path]::GetFileName($filePath)
+
+    if (Test-FileExistsInDsk -DskPath $dskPath -FileName $fileName -BinaryPath $ResolvedBinary) {
+        if (Invoke-OverwritePrompt -FileName $fileName) {
+            $IadskArgs += @("--force")
+        } else {
+            Write-Output ""
+            Write-Output "Operación cancelada por el usuario."
+            exit 0
         }
     }
 }
@@ -435,6 +597,8 @@ try {
     [Console]::Error.WriteLine($_.Exception.Message)
     exit 1
 }
+
+Invoke-OverwriteCheck -ResolvedBinary $resolved
 
 $effectiveFormat = $Format
 if ($RawJson) {

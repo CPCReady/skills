@@ -15,6 +15,7 @@ description: Instalar, actualizar y ejecutar iaDSK para trabajar con imágenes .
    - macOS/Linux: `scripts/run_iadsk.sh`
    - Windows: `scripts/run_iadsk.ps1`
 4. Usar salida Markdown por defecto para humanos; activar JSON solo cuando se necesite parseo automático.
+5. **Para archivos binarios:** NUNCA asumir direcciones `--load` o `--exec`. Dejar que el wrapper las solicite interactivamente.
 
 ## Instalación sin compilación
 
@@ -98,6 +99,130 @@ Aliases válidos:
 - `export` -> `get`
 - `rm` -> `era`
 - `disassemble` -> `disasm`
+
+## Prompts interactivos al añadir archivos
+
+Los wrappers (`run_iadsk.sh` y `run_iadsk.ps1`) incluyen **validaciones automáticas** para el comando `save`. Cuando el usuario ejecuta en modo interactivo (terminal con stdin), se presentan prompts para:
+
+### 1. Verificación de sobrescritura
+
+**Cuándo:** El archivo ya existe en el DSK y no se proporcionó `--force`.
+
+**Prompt:**
+```
+⚠️  El archivo 'PROGRAM.BIN' ya existe en el disco.
+
+¿Deseas sobrescribir? (s/n) [n]:
+```
+
+- Si el usuario confirma (s/y), se agrega automáticamente `--force`.
+- Si el usuario cancela o presiona Enter, se aborta la operación.
+
+### 2. Tipo de archivo AMSDOS
+
+**Cuándo:** No se especificó `--type`.
+
+**Prompt:**
+```
+Tipo de archivo AMSDOS:
+  1) ascii   - Archivo de texto ASCII
+  2) binary  - Archivo binario con cabecera AMSDOS
+  3) raw     - Datos crudos sin cabecera
+
+Selecciona tipo [2]:
+```
+
+- Por defecto: `2 (binary)` para archivos binarios, `1 (ascii)` para texto detectado.
+- Los wrappers detectan automáticamente texto vs binario mediante inspección del contenido y extensión.
+
+### 3. Dirección de carga (load address) - OBLIGATORIO
+
+**Cuándo:** Archivo binario detectado y no se proporcionó `--load`.
+
+**Prompt:**
+```
+### Añadir archivo binario
+
+Archivo: `program.bin`
+
+Para archivos binarios es OBLIGATORIO indicar la dirección de carga AMSDOS.
+
+Dirección de carga (--load) en hexadecimal:
+```
+
+- **OBLIGATORIO:** El usuario debe proporcionar una dirección, no hay valor por defecto.
+- El prompt se repite hasta que se ingrese una dirección válida.
+- **En modo no interactivo (pipes/automatización):** El comando falla con error si falta `--load`.
+
+### 4. Dirección de ejecución (exec address) - OBLIGATORIO
+
+**Cuándo:** Archivo binario detectado y no se proporcionó `--exec`.
+
+**Prompt:**
+```
+Dirección de ejecución (--exec) en hexadecimal.
+OBLIGATORIO para programas ejecutables. Dejar vacío solo para datos.
+
+Dirección de ejecución (--exec):
+```
+
+- **OBLIGATORIO para ejecutables:** Si el archivo se ejecuta, debe tener dirección de ejecución.
+- Puede dejarse vacío solo si es un archivo de datos (gráficos, música, etc.).
+- **En modo no interactivo:** No se solicita (el usuario debe proporcionar `--exec` si es necesario).
+
+### Modo no interactivo
+
+Cuando stdin no es un terminal (pipes, automatizaciones), los wrappers **NO usan valores por defecto**:
+
+- `--type`: auto-detectado si no se especifica
+- `--load`: **FALLA con error si es binario y no se proporciona**
+- `--exec`: no se solicita (opcional)
+- Sobrescritura: falla si el archivo existe (requiere `--force` explícito)
+
+**Ejemplo de error en modo no interactivo:**
+```bash
+echo "data" | ./scripts/run_iadsk.sh -- save --dsk demo.dsk --file program.bin
+# ERROR: Archivos binarios requieren --load <dirección>.
+# Ejemplo: --load 0x4000
+```
+
+### Evitar prompts (modo automatizado)
+
+Para evitar prompts interactivos, proporciona **todos los parámetros explícitamente**:
+
+```bash
+./scripts/run_iadsk.sh -- save --dsk demo.dsk --file program.bin \
+  --type binary --load 0x8000 --exec 0x8000 --force
+```
+
+## CRITICAL: Agent behavior for save command
+
+**NUNCA ASUMIR VALORES PARA --load Y --exec**
+
+Cuando el usuario solicita añadir un archivo binario a un DSK, el agente **DEBE**:
+
+1. **NO proporcionar** `--load` ni `--exec` en el comando
+2. **Dejar que el wrapper solicite interactivamente** estas direcciones al usuario
+3. **Ejecutar el comando SIN estos parámetros** para activar los prompts interactivos
+
+**INCORRECTO (NO HACER ESTO):**
+```bash
+./scripts/run_iadsk.sh -- save --dsk demo.dsk --file program.bin --type binary --load 0x4000 --exec 0x4000
+```
+
+**CORRECTO:**
+```bash
+./scripts/run_iadsk.sh -- save --dsk demo.dsk --file program.bin
+```
+
+El wrapper detectará automáticamente que es un archivo binario y solicitará:
+- Tipo de archivo (ascii/binary/raw)
+- Dirección de carga (--load) - OBLIGATORIO para binarios
+- Dirección de ejecución (--exec) - OBLIGATORIO para ejecutables
+
+**Excepciones:** Solo proporcionar `--load` y `--exec` si:
+- El usuario los especificó explícitamente en su solicitud
+- Se está ejecutando en modo no interactivo (automatización)
 
 ## Presenting results to the user
 
