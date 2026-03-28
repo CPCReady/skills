@@ -14,7 +14,7 @@ description: Instalar, actualizar y ejecutar iaDSK para trabajar con imágenes .
 3. Ejecutar comandos con wrapper nativo:
    - macOS/Linux: `scripts/run_iadsk.sh`
    - Windows: `scripts/run_iadsk.ps1`
-4. Usar salida Markdown por defecto para humanos; activar JSON solo cuando se necesite parseo automático.
+4. La salida por defecto es JSON para facilitar parseo. Los agentes deben formatear esta salida como Markdown antes de presentarla al usuario.
 5. **Para archivos binarios:** NUNCA asumir direcciones `--load` o `--exec`. Dejar que el wrapper las solicite interactivamente.
 
 ## Instalación sin compilación
@@ -55,7 +55,7 @@ macOS/Linux:
 ```bash
 ./scripts/run_iadsk.sh -- help
 ./scripts/run_iadsk.sh -- free --dsk demo.dsk
-./scripts/run_iadsk.sh --format json -- free --dsk demo.dsk
+./scripts/run_iadsk.sh --format markdown -- free --dsk demo.dsk
 ```
 
 Windows:
@@ -63,7 +63,7 @@ Windows:
 ```powershell
 .\scripts\run_iadsk.ps1 -- help
 .\scripts\run_iadsk.ps1 -- free --dsk demo.dsk
-.\scripts\run_iadsk.ps1 -Format json -- free --dsk demo.dsk
+.\scripts\run_iadsk.ps1 -Format markdown -- free --dsk demo.dsk
 ```
 
 Resolución de binario (prioridad):
@@ -75,10 +75,11 @@ Resolución de binario (prioridad):
 
 Formato de salida:
 
-- Por defecto: Markdown legible para usuario.
-- JSON para automatización:
-  - shell: `--format json` (compat: `--raw-json`)
-  - PowerShell: `-Format json` (compat: `-RawJson`)
+- **Por defecto: JSON** para facilitar parseo automático por agentes IA.
+- **Markdown para lectura directa:**
+  - shell: `--format markdown`
+  - PowerShell: `-Format markdown`
+- **Compatibilidad:** alias `--raw-json` / `-RawJson` obsoletos (siempre devuelve JSON sin formato).
 
 ## Comandos base de iaDSK
 
@@ -253,20 +254,63 @@ El wrapper solicitará interactivamente:
 
 ## Presenting results to the user
 
-**IMPORTANT:** The iaDSK output is already in Markdown format ready to render. The agent MUST:
+**IMPORTANT:** iaDSK returns JSON by default. The agent MUST:
 
-- **Hide the command execution** from the user (don't show the bash tool call or raw output in a code block)
-- **Present the result as rendered Markdown** by copying the script output directly into the response text, not as a code block
-- Show the complete output as returned by iaDSK, without summarizing, omitting rows, or reinterpreting
-- Do NOT show markdown source code (like `| col | col |`); the user should see rendered tables, lists, and formatted headings
-- If the output includes multiple sections (e.g., Catalog + Space), show them all complete
-- Do NOT mention the executed command, binary path, or any technical invocation details
-- The user should only see the final formatted result
+1. **Execute the command** (no format flag needed - JSON is default)
+2. **Parse the JSON response** to extract relevant data
+3. **Format as Markdown table** with appropriate columns:
+   - **Name**: Filename from `name` field
+   - **User**: User number from `user` field (0-15)
+   - **Size**: Size from `size_kb` field with "K" suffix
+   - **Load**: Convert `load` (decimal) to hex with "0x" prefix (e.g., 16384 → 0x4000)
+   - **Exec**: Convert `exec` (decimal) to hex with "0x" prefix (e.g., 16384 → 0x4000)
+   - **Attr**: Combine attribute flags:
+     - `read_only: true` → "R"
+     - `system: true` → "S"
+     - Both true → "RS"
+     - Both false → "" (empty)
+4. **Add summary line**: Show `used_kb` / `total_kb` (e.g., "2K / 178K used")
+5. **Present formatted Markdown** to user (hide raw command and JSON)
 
-**Example workflow:**
-1. Execute internally: `./scripts/run_iadsk.sh -- cat --dsk demo.dsk`
-2. Capture the markdown output
-3. Present to user: Paste the markdown directly in your text response so it renders as formatted tables/headings, not as code
+**JSON structure for `cat` command:**
+```json
+{
+  "dsk": "/path/to/file.dsk",
+  "entries": [
+    {
+      "name": "PROGRAM.BIN",
+      "user": 0,
+      "load": 16384,           // DECIMAL - convert to 0x4000
+      "exec": 16384,           // DECIMAL - convert to 0x4000
+      "size_bytes": 2048,
+      "size_kb": 2,
+      "read_only": true,       // → Display "R"
+      "system": false          // → Display "S"
+    }
+  ],
+  "total_kb": 178,
+  "used_kb": 2,
+  "free_kb": 176
+}
+```
+
+**Example formatted output to present:**
+```markdown
+| Name        | User | Size | Load   | Exec   | Attr |
+|-------------|------|------|--------|--------|------|
+| PROGRAM.BIN |    0 |   2K | 0x4000 | 0x4000 | R    |
+| DATA.BIN    |    0 |   1K | 0x8000 | 0x8000 |      |
+
+2K / 178K used
+```
+
+**DO NOT:**
+- Show the raw bash command to the user
+- Show raw JSON output in a code block
+- Mention binary paths or technical execution details
+- Summarize or omit entries - show all files
+
+**User should only see:** The final formatted Markdown table with all entries and summary.
 
 ## Validación mínima tras instalación
 
@@ -284,8 +328,8 @@ Ejecutar en Windows:
 
 Validar que:
 
-- Sin flags extra, la salida es Markdown legible para usuario.
-- En modo JSON (`--format json` / `-Format json`), la salida es JSON válido de `iaDSK`.
+- Sin flags extra, la salida es **JSON válido** de `iaDSK`.
+- Con `--format markdown` / `-Format markdown`, la salida es Markdown legible.
 - En modo JSON, `meta.program` es `iaDSK`.
 
 ## Recursos

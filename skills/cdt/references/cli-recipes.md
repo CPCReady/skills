@@ -2,6 +2,25 @@
 
 Complete reference for all ia2cdt.py commands and options.
 
+## Output Format
+
+**BREAKING CHANGE:** A partir de ahora, ia2cdt.py devuelve **JSON por defecto**.
+
+- **Default:** JSON estructurado (optimizado para parseo automático por agentes IA)
+- **Human-readable:** Añadir `--format markdown` para salida Markdown legible directamente
+
+### Ejemplos de formato
+
+```bash
+# JSON (default) - Ideal para agentes IA
+python3 ia2cdt.py cat game.cdt
+
+# Markdown - Para lectura humana directa
+python3 ia2cdt.py cat game.cdt --format markdown
+```
+
+**Para agentes IA:** Ejecutar comandos sin flags de formato, recibir JSON, parsear y presentar como Markdown al usuario.
+
 ## Command Structure
 
 ```
@@ -9,7 +28,7 @@ ia2cdt.py <command> [arguments] [options]
 ```
 
 All commands support:
-- `--format json` : Output in JSON format (default: Markdown)
+- `--format markdown` : Output in Markdown format (default: JSON)
 - `--help` : Show command-specific help
 
 ---

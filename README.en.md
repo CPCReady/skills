@@ -54,8 +54,8 @@ Automation for iaDSK, a command-line tool to create, edit, and manage Amstrad CP
 #### Features
 - Cross-platform support (Windows, macOS, Linux)
 - Embedded precompiled binaries
-- Human-readable Markdown output
-- JSON mode for automation
+- **JSON output by default** (optimized for AI agents)
+- Markdown mode available for direct human reading
 - x64 and ARM64 architecture support
 
 #### Use Cases
@@ -99,6 +99,8 @@ Automation for iaDSK, a command-line tool to create, edit, and manage Amstrad CP
 "Show the BASIC content of the MAIN.BAS file"
 "Disassemble the SPRITE.BIN file"
 ```
+
+*Note: iaDSK now returns JSON by default. Add `--format markdown` (or `-Format markdown` on PowerShell) for direct human-readable output.*
 
 ---
 
@@ -222,14 +224,14 @@ Automation for iaDSK, a command-line tool to create, edit, and manage Amstrad CP
 
 ### 📼 cdt - ia2cdt Tape Image Toolkit
 
-Automation layer for the new Python ia2cdt script. Create and validate Amstrad CPC cassette images (`.cdt`/`.tzx`) with subcommands, advanced encoding methods, and Markdown/JSON reporting.
+Automation layer for the new Python ia2cdt script. Create and validate Amstrad CPC cassette images (`.cdt`/`.tzx`) with subcommands, advanced encoding methods, and JSON-first reporting (Markdown optional).
 
 #### Features
 - Pure Python (no native binaries) – runs on Windows, macOS, Linux.
 - Subcommand CLI: `new`, `save`, `cat`, `check`.
 - Data methods: standard blocks, headerless, ZX Spectrum, and two custom split strategies.
 - Baud rate control (1000–6000) plus custom pauses.
-- Markdown + JSON output for catalog listings and automation pipelines.
+- **JSON output by default** with optional Markdown mode for catalog listings.
 
 #### Use Cases
 - Build multi-stage tape loaders (fast BASIC + binary payloads).
@@ -243,7 +245,7 @@ Automation layer for the new Python ia2cdt script. Create and validate Amstrad C
 |---------|-------------|
 | `new <cdt>` | Create a blank tape with initial pause |
 | `save <cdt> --file <path>` | Append a file with configurable encoding |
-| `cat <cdt> [--format json]` | List every block (Markdown or JSON) |
+| `cat <cdt> [--format markdown]` | List every block (JSON default, Markdown optional) |
 | `check <cdt>` | Validate structure, headers, and CRCs |
 
 #### Data Methods
@@ -264,6 +266,8 @@ Automation layer for the new Python ia2cdt script. Create and validate Amstrad C
 "Show the catalog of retro.cdt in JSON format"
 "Verify the integrity of competition.cdt"
 ```
+
+*Note: ia2cdt.py now returns JSON by default. Add `--format markdown` for direct human-readable output.*
 
 ---
 

@@ -33,6 +33,70 @@ This guide provides coding conventions, commands, and patterns for agents workin
 - Users can use skills without agents (direct command execution)
 - Agent provides enhanced UX (interactive prompts, safety checks)
 
+## Output Format Philosophy
+
+**BREAKING CHANGE:** All CPCReady skills now emit **JSON by default**. Markdown is still available, but only when explicitly requested.
+
+- **Default output**: JSON (no `--format` flag needed)
+- **Markdown override**: `--format markdown` (shell) / `-Format markdown` (PowerShell)
+- **Agent responsibility**: Parse JSON → Format Markdown → Present to user (never show raw JSON/commands)
+
+### DSK Catalog Formatting Rules
+
+JSON structure (`cat` command):
+```json
+{
+  "dsk": "demo.dsk",
+  "entries": [
+    {
+      "name": "PROGRAM.BIN",
+      "user": 0,
+      "load": 16384,
+      "exec": 16384,
+      "size_kb": 2,
+      "read_only": true,
+      "system": false
+    }
+  ],
+  "used_kb": 2,
+  "total_kb": 178
+}
+```
+
+Render as Markdown table with columns `Name | User | Size | Load | Exec | Attr`. Convert `load`/`exec` to hex (`0x4000`). Translate attributes: `read_only → R`, `system → S`, `RS` if both.
+
+### CDT Catalog Formatting Rules
+
+JSON structure (`cat` command): array of blocks
+```json
+[
+  {
+    "index": 1,
+    "type": "Turbo Speed",
+    "data_bytes": 263,
+    "pause_ms": 15,
+    "header": {
+      "filename": "program.bin",
+      "type": "BIN",
+      "load_addr": "0x4000",
+      "start_addr": "0x4000",
+      "length": 325
+    }
+  }
+]
+```
+
+Render as Markdown table with `# | Type | Size | Pause | Filename | File Type | Load | Exec | Length`. Use header values directly (already hex strings).
+
+### Presentation Rules
+
+1. Execute command silently (JSON default)
+2. Parse JSON structure
+3. Format Markdown table + summary line (if applicable)
+4. Present formatted Markdown only; hide commands and raw JSON
+
+This philosophy ensures agents always operate on structured data, then render user-friendly output on demand.
+
 ## Build, Test, and Lint Commands
 
 ### Current Status
@@ -233,19 +297,18 @@ skills/cdt/
 - Add cross-skill dependencies
 - Modify one skill while working on another
 
-### Output Format Philosophy
+### Output Format Philosophy (Agent UX)
 
-**Markdown-first UX:**
-- Default output is **Markdown** (human-readable)
-- JSON opt-in via `--format json` (shell) or `-Format json` (PowerShell)
-- Never change default to plain text
+Reinforcing the JSON-first model:
+- Tools emit JSON unless `--format markdown`/`-Format markdown` is explicitly set
+- Agents parse JSON, convert to Markdown tables, and show users the formatted result
+- Never expose raw commands, binary paths, or JSON payloads
 
-**Agent Presentation Rules (CRITICAL):**
-When tools return Markdown output, agents must:
-1. **Hide raw command execution** from user
-2. **Present result as rendered Markdown** (not code block)
-3. Show complete output (no summarizing or omitting rows)
-4. Do NOT mention command details, binary paths, or invocation
+**Presentation Checklist:**
+1. Execute command silently (JSON default)
+2. Parse JSON in-memory
+3. Render Markdown tables + summaries (no code blocks)
+4. Present all entries; avoid truncation or omission
 
 ## Binary Management (DSK Skill)
 

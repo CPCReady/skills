@@ -9,7 +9,7 @@ description: Crear y gestionar imágenes .cdt de cassette tape para Amstrad CPC 
 
 1. Verificar que Python 3 esté disponible en el sistema.
 2. Ejecutar directamente `ia2cdt.py` desde `scripts/` (no requiere instalación).
-3. Usar salida Markdown por defecto para humanos; activar JSON con `--format json` para parseo automático.
+3. La salida por defecto es JSON para facilitar parseo. Los agentes deben formatear esta salida como Markdown antes de presentarla al usuario.
 4. **Para archivos binarios:** NUNCA asumir direcciones `--load-addr` o `--start-addr`. Dejar que ia2cdt.py las solicite interactivamente.
 
 ## Herramienta Python pura
@@ -33,7 +33,7 @@ Sintaxis tipo iaDSK con subcomandos:
 ```bash
 ia2cdt.py new <cdt_file>
 ia2cdt.py save <cdt_file> --file <input_file> [options]
-ia2cdt.py cat <cdt_file> [--format json]
+ia2cdt.py cat <cdt_file> [--format markdown]
 ia2cdt.py check <cdt_file>
 ```
 
@@ -80,16 +80,16 @@ Lista el contenido del CDT (todos los bloques).
 
 ```bash
 ia2cdt.py cat game.cdt
-ia2cdt.py cat game.cdt --format json
+ia2cdt.py cat game.cdt --format markdown
 ```
 
-Salida Markdown (default):
+Salida JSON (default):
+- Array de bloques con metadatos completos en formato JSON
+- Los agentes deben parsear y formatear como Markdown antes de presentar al usuario
+
+Salida Markdown (con `--format markdown`):
 - Tabla con columnas: Block #, Type, Size, Details
 - Información de headers decodificados (nombre, tipo, dirección)
-
-Salida JSON:
-- Array de bloques con metadatos completos
-- Útil para scripts automatizados
 
 ### Comando: check
 
@@ -158,7 +158,7 @@ Esta herramienta Python **extiende** la funcionalidad de `ia2cdt` (C) y `cdt.py`
 | TZX methods    | Turbo only | Turbo only      | Turbo + Pure + Standard|
 | Data methods   | 4 tipos    | Solo blocks     | 5 tipos completos      |
 | Pausas custom  | ❌         | Fijas           | Totalmente custom      |
-| Salida formato | Silencioso | print()         | Markdown + JSON        |
+| Salida formato | Silencioso | print()         | JSON + Markdown        |
 | CLI moderna    | Flags      | Flags           | Subcomandos            |
 
 ## Prompts interactivos
@@ -280,6 +280,58 @@ ia2cdt.py solicitará interactivamente:
 - El usuario los especificó explícitamente en su solicitud
 - Se está ejecutando en modo no interactivo (automatización)
 
+## Presenting results to the user
+
+**IMPORTANT:** ia2cdt.py returns JSON by default. The agent MUST:
+
+1. **Execute the command** (no format flag needed - JSON is default)
+2. **Parse the JSON response** to extract relevant data (array of blocks)
+3. **Format as Markdown table** with appropriate columns:
+   - **#**: Block index from `index` field
+   - **Type**: Block type from `type` field
+   - **Size**: Data size from `data_bytes` with "B" suffix
+   - **Pause**: Pause duration from `pause_ms` with "ms" suffix
+   - **Filename**: From `header.filename` (if header exists)
+   - **File Type**: From `header.type` (if header exists)
+   - **Load**: From `header.load_addr` (already hex format)
+   - **Exec**: From `header.start_addr` (already hex format)
+   - **Length**: From `header.length` with "B" suffix
+4. **Present formatted Markdown** to user (hide raw command and JSON)
+
+**JSON structure for `cat` command:**
+```json
+[
+  {
+    "index": 1,
+    "type": "Turbo Speed",
+    "data_bytes": 263,
+    "pause_ms": 15,
+    "header": {
+      "filename": "program.bin",
+      "type": "BIN",
+      "load_addr": "0x4000",    // Already in hex format
+      "start_addr": "0x4000",
+      "length": 325
+    }
+  }
+]
+```
+
+**Example formatted output to present:**
+```markdown
+| # | Type        | Size | Pause | Filename    | File Type | Load   | Exec   | Length |
+|---|-------------|------|-------|-------------|-----------|--------|--------|--------|
+| 1 | Turbo Speed | 263B | 15ms  | program.bin | BIN       | 0x4000 | 0x4000 | 325B   |
+```
+
+**DO NOT:**
+- Show the raw Python command to the user
+- Show raw JSON output in a code block
+- Mention script paths or technical execution details
+- Summarize or omit blocks - show all entries
+
+**User should only see:** The final formatted Markdown table with all blocks.
+
 ## Referencias adicionales
 
 - Detalle completo de opciones: `references/cli-recipes.md`
@@ -297,9 +349,9 @@ ia2cdt.py solicitará interactivamente:
 
 **Archivo no carga en emulador**
 - Probar con baud rate más bajo (2000 o 1000).
-- Verificar direcciones de carga con `cat --format json`.
+- Verificar direcciones de carga con `cat` (la salida JSON muestra load_addr y start_addr).
 - Usar `check` para validar integridad.
 
 **Output muy verboso**
-- Por defecto usa Markdown legible.
-- Para scripts usar `--format json` y parsear.
+- Por defecto usa JSON para facilitar parseo automático.
+- Para salida legible directa usar `--format markdown`.

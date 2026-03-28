@@ -1,12 +1,40 @@
 # Recetas CLI de iaDSK
 
+## Output Format
+
+**BREAKING CHANGE:** A partir de ahora, iaDSK devuelve **JSON por defecto**.
+
+- **Default:** JSON estructurado (optimizado para parseo automático por agentes IA)
+- **Human-readable:** Añadir `--format markdown` para salida Markdown legible directamente
+- **Compatibilidad:** Flag `--raw-json` obsoleto (siempre devuelve JSON sin formatear)
+
+### Ejemplos de formato
+
+```bash
+# JSON (default) - Ideal para agentes IA
+./scripts/run_iadsk.sh -- cat --dsk demo.dsk
+
+# Markdown - Para lectura humana directa
+./scripts/run_iadsk.sh --format markdown -- cat --dsk demo.dsk
+```
+
+```powershell
+# JSON (default) - Ideal para agentes IA
+.\scripts\run_iadsk.ps1 -- cat --dsk demo.dsk
+
+# Markdown - Para lectura humana directa
+.\scripts\run_iadsk.ps1 -Format markdown -- cat --dsk demo.dsk
+```
+
+**Para agentes IA:** Ejecutar comandos sin flags de formato, recibir JSON, parsear y presentar como Markdown al usuario.
+
 ## Patron general
 
 1. Ejecutar wrappers de la skill (`run_iadsk.sh` o `run_iadsk.ps1`).
-2. Por defecto, leer salida Markdown (titulo, tablas y bloques).
-3. Si necesitas parseo, usar modo JSON:
-   - shell: `--format json` (compat: `--raw-json`)
-   - PowerShell: `-Format json` (compat: `-RawJson`)
+2. Por defecto, recibir salida JSON estructurada.
+3. Para lectura humana directa:
+   - shell: `--format markdown`
+   - PowerShell: `-Format markdown`
 
 ## Instalación desde binarios embebidos
 

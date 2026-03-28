@@ -54,8 +54,8 @@ Automatización para iaDSK, una herramienta de línea de comandos para crear, ed
 #### Características
 - Soporte multiplataforma (Windows, macOS, Linux)
 - Binarios precompilados incluidos
-- Salida legible en formato Markdown
-- Modo JSON para automatización
+- **Salida JSON por defecto** (optimizada para agentes IA)
+- Modo Markdown opcional para lectura directa
 - Soporte para arquitecturas x64 y ARM64
 
 #### Casos de Uso
@@ -99,6 +99,8 @@ Automatización para iaDSK, una herramienta de línea de comandos para crear, ed
 "Muestra el contenido BASIC del archivo MAIN.BAS"
 "Desensambla el archivo SPRITE.BIN"
 ```
+
+*Nota: iaDSK ahora devuelve JSON por defecto. Añade `--format markdown` (o `-Format markdown` en PowerShell) para obtener salida legible directamente.*
 
 ---
 
@@ -222,13 +224,13 @@ Automatización para iaDSK, una herramienta de línea de comandos para crear, ed
 
 ### 📼 cdt - Toolkit de cintas ia2cdt
 
-Automatiza el nuevo script Python ia2cdt para crear y validar imágenes de cassette Amstrad CPC (`.cdt`/`.tzx`). Todo se ejecuta con Python 3, sin instaladores ni binarios externos.
+Automatiza el nuevo script Python ia2cdt para crear y validar imágenes de cassette Amstrad CPC (`.cdt`/`.tzx`). Todo se ejecuta con Python 3, salida JSON por defecto y modo Markdown opcional.
 
 #### Características
 - CLI con subcomandos (`new`, `save`, `cat`, `check`).
 - Métodos de datos avanzados: bloques estándar, headerless, Spectrum, splits 2K y 1B.
 - Control de baudios 1000–6000 y pausas personalizadas.
-- Salidas Markdown y JSON listas para documentación o CI.
+- **Salida JSON por defecto** con modo Markdown opcional para lectura directa.
 - Lectura y escritura en una sola herramienta.
 
 #### Casos de Uso
@@ -243,7 +245,7 @@ Automatiza el nuevo script Python ia2cdt para crear y validar imágenes de casse
 |---------|-------------|
 | `new <cdt>` | Crea una cinta vacía |
 | `save <cdt> --file <ruta>` | Añade archivo con parámetros avanzados |
-| `cat <cdt> [--format json]` | Lista los bloques |
+| `cat <cdt> [--format markdown]` | Lista los bloques (JSON por defecto, Markdown opcional) |
 | `check <cdt>` | Comprueba formato y CRC |
 
 #### Métodos de datos
@@ -264,6 +266,8 @@ Automatiza el nuevo script Python ia2cdt para crear y validar imágenes de casse
 "Muestra el catálogo de retro.cdt en formato JSON"
 "Valida la integridad de competition.cdt"
 ```
+
+*Nota: ia2cdt.py ahora devuelve JSON por defecto. Añade `--format markdown` para obtener salida legible directamente.*
 
 ---
 
