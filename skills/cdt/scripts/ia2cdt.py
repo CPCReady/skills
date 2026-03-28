@@ -26,7 +26,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-__author__ = 'Javier "Dwayne Hicks" Garcia'
+# Based on the original code by Dwayne Hicks.
+
+__author__ = "Destroyer"
 __version__ = "1.0"
 
 import sys
@@ -1619,8 +1621,8 @@ def process_args():
     parser_cat.add_argument(
         "--format",
         choices=["markdown", "json"],
-        default="markdown",
-        help="Output format (default: markdown)",
+        default="json",
+        help="Output format (default: json)",
     )
 
     # Command: check
@@ -1629,8 +1631,8 @@ def process_args():
     parser_check.add_argument(
         "--format",
         choices=["markdown", "json"],
-        default="markdown",
-        help="Output format (default: markdown)",
+        default="json",
+        help="Output format (default: json)",
     )
 
     # Command: save

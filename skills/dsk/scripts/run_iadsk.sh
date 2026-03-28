@@ -19,7 +19,7 @@ while [[ $# -gt 0 ]]; do
 		binary="$1"
 		;;
 	--raw-json)
-		output_format="markdown"
+		output_format="json"
 		;;
 	--format)
 		shift

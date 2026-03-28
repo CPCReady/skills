@@ -2,7 +2,7 @@
 Param(
     [string]$Binary,
     [ValidateSet("markdown", "json")]
-    [string]$Format = "markdown",
+    [string]$Format = "json",
     [switch]$RawJson,
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$IadskArgs
