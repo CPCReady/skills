@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 binary=""
-output_format="markdown"
+output_format="json"
 args=()
 
 while [[ $# -gt 0 ]]; do
@@ -19,7 +19,7 @@ while [[ $# -gt 0 ]]; do
 		binary="$1"
 		;;
 	--raw-json)
-		output_format="json"
+		output_format="markdown"
 		;;
 	--format)
 		shift
@@ -40,11 +40,8 @@ Usage: run_iadsk.sh [--binary <path>] [--format markdown|json] [--raw-json] -- <
 USAGE
 		exit 0
 		;;
-	*)
-		new_args+=("${args[$i]}")
-		;;
 	esac
-	i=$((i + 1))
+	shift
 done
 
 if [[ "$output_format" != "markdown" && "$output_format" != "json" ]]; then
