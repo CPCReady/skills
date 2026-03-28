@@ -27,9 +27,108 @@ instructions: |
   
   ## Output Format
   
-  - Default: Markdown (human-readable)
-  - JSON mode: `--format json` or `-Format json` for automation
-  - Never show raw command execution; present results as rendered Markdown
+  - **Default: JSON** (optimized for AI agents and automation)
+  - Commands ALWAYS return JSON by default (no flags needed)
+  - Agent responsibility: Parse JSON and format as Markdown for user presentation
+  - Override: Use `--format markdown` or `-Format markdown` for direct human-readable output
+  - **CRITICAL: Never show raw JSON to users; always parse and present as formatted Markdown**
+  
+  ## Agent Workflow for Command Execution
+  
+  When executing DSK/CDT commands:
+  1. **Execute command WITHOUT `--format` flag** (default is JSON)
+  2. **Receive JSON response** from tool
+  3. **Parse JSON** to extract relevant data
+  4. **Format data as Markdown** with proper tables, headings, and formatting
+  5. **Present formatted Markdown** directly to user (not in code blocks)
+  
+  **Special Case - Help/Text Content:**
+  - If JSON contains `content_type: "text/plain"` (e.g., help command)
+  - Extract the `content` field and present as formatted text/Markdown
+  - Example: iaDSK help returns plain text usage in JSON envelope
+  
+  **Example Flow:**
+  ```
+  User: "List files on demo.dsk"
+  
+  Agent executes: run_iadsk.sh -- cat --dsk demo.dsk
+  Tool returns JSON: {"ok":true,"data":{"entries":[...]}}
+  
+  Agent presents formatted Markdown:
+  
+  ## Disk: demo.dsk
+  
+  | File     | User | Load   | Exec   | Size  | Attr |
+  |----------|------|--------|--------|-------|------|
+  | MAIN.BAS | 0    | 0x0000 | 0x0000 | 1 KB  |      |
+  | GAME.BIN | 0    | 0x4000 | 0x4000 | 16 KB | R    |
+  ```
+  
+  ## JSON Data Structure Reference
+  
+  ### DSK cat command response:
+  ```json
+  {
+    "ok": true,
+    "data": {
+      "dsk": "/path/to/file.dsk",
+      "entries": [
+        {
+          "name": "FILE.BIN",
+          "user": 0,
+          "load": 16384,          // decimal → convert to hex: 0x4000
+          "exec": 16384,
+          "size_bytes": 1024,
+          "size_kb": 1,
+          "read_only": true,      // Show as "R" in Attr column
+          "system": false         // Show as "S" in Attr column
+        }
+      ],
+      "total_kb": 178,
+      "used_kb": 1,
+      "free_kb": 177
+    }
+  }
+  ```
+  
+  **When formatting DSK catalog for user:**
+  1. Convert `load`/`exec` from decimal to hex with 0x prefix
+  2. Build Attr column:
+     - "R" if `read_only` is true
+     - "S" if `system` is true
+     - "RS" if both are true
+     - Empty string if both are false
+  3. Include ALL columns: File, User, Load, Exec, Size, Attr
+  4. Add space summary table below with total/used/free KB
+  
+  ### CDT cat command response:
+  ```json
+  {
+    "cdt_file": "demo.cdt",
+    "version": "1.13",
+    "blocks": [
+      {
+        "index": 2,
+        "type": "Turbo Speed",
+        "data_bytes": 263,
+        "pause_ms": 15,
+        "header": {
+          "filename": "program.bin",
+          "type": "BIN",
+          "load_addr": "0x4000",    // Already in hex
+          "start_addr": "0x4000",
+          "length": 325
+        }
+      }
+    ]
+  }
+  ```
+  
+  **When formatting CDT catalog for user:**
+  1. Show block table with columns: Block #, Type, Size, Details
+  2. For headers: extract filename, type, and load address
+  3. For data blocks: show payload bytes
+  4. Preserve pause information
   
   ## Decision Making
   
