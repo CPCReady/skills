@@ -64,9 +64,13 @@ machine=""
 extra_args=()
 input_file=""
 has_double_dash=false
+close_existing_flag=false
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
+	--close-existing | -ce)
+		close_existing_flag=true
+		;;
 	--machine | -m)
 		shift
 		if [[ $# -eq 0 ]]; then
@@ -124,6 +128,7 @@ Opciones:
   --command, -c <texto>   Enviar teclas al intérprete BASIC al arrancar
   --width, -wi <px>       Ancho de ventana (mínimo 700)
   --play, -p              Auto play de cinta al inicio
+  --close-existing, -ce   Cerrar instancias de RVM abiertas sin preguntar
   --                      Pasar argumentos directamente a RVM sin procesar
   -h, --help              Mostrar esta ayuda
 
@@ -339,7 +344,13 @@ done < <(pgrep -f "$RVM_BINARY_NAME" 2>/dev/null || true)
 
 if [[ ${#RVM_PIDS[@]} -gt 0 ]]; then
 	PID_COUNT="${#RVM_PIDS[@]}"
-	if [[ -t 0 ]]; then
+	if [[ "$close_existing_flag" == true ]]; then
+		# Modo no interactivo con flag explícito: cerrar sin preguntar
+		for pid in "${RVM_PIDS[@]}"; do
+			kill -9 "$pid" 2>/dev/null || true
+		done
+	elif [[ -t 0 ]]; then
+		# Modo interactivo: preguntar al usuario
 		echo "" >&2
 		echo "### Instancias de RVM en ejecución: $PID_COUNT" >&2
 		echo "" >&2

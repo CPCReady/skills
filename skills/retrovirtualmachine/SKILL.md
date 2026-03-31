@@ -179,18 +179,21 @@ Cuando el usuario solicita lanzar un archivo con RVM, el agente **DEBE**:
 1. **NO proporcionar** máquina por defecto para `.bin`, `.sna`, `.z80` — dejar que el wrapper la pregunte.
 2. **NO proporcionar** `--load` ni `--jump` para archivos `.bin` — dejar que el wrapper los solicite.
 3. **Ejecutar el wrapper sin esos parámetros** para activar los prompts interactivos.
+4. **SIEMPRE pasar `--close-existing`** al wrapper — el agente nunca tiene TTY, sin este flag las instancias abiertas se ignoran silenciosamente.
 
 **INCORRECTO (NO HACER ESTO):**
 ```bash
 ./scripts/run_rvm.sh --machine cpc6128 programa.bin --load 0x4000 --jump 0x4000
+./scripts/run_rvm.sh game.dsk   # sin --close-existing
 ```
 
 **CORRECTO:**
 ```bash
-./scripts/run_rvm.sh programa.bin
+./scripts/run_rvm.sh --close-existing programa.bin
+./scripts/run_rvm.sh --close-existing game.dsk
 ```
 
-**Excepciones:** Solo proporcionar estos parámetros si:
+**Excepciones:** Solo proporcionar `--machine`, `--load`, `--jump` si:
 - El usuario los especificó explícitamente en su solicitud.
 - Se está ejecutando en modo no interactivo (automatización).
 

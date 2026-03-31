@@ -6,6 +6,7 @@ Param(
     [string]$Command,
     [int]$Width,
     [switch]$Play,
+    [switch]$CloseExisting,
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$RvmArgs
 )
@@ -245,7 +246,13 @@ $RunningInstances = Get-Process -Name $RvmBinaryName -ErrorAction SilentlyContin
 
 if ($null -ne $RunningInstances -and $RunningInstances.Count -gt 0) {
     $PidCount = $RunningInstances.Count
-    if (-not [Console]::IsInputRedirected) {
+    if ($CloseExisting) {
+        # Flag explícito: cerrar sin preguntar
+        foreach ($proc in $RunningInstances) {
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+        }
+    } elseif (-not [Console]::IsInputRedirected) {
+        # Modo interactivo: preguntar al usuario
         Write-Host ""
         Write-Host "### Instancias de RVM en ejecución: $PidCount"
         Write-Host ""
@@ -253,9 +260,9 @@ if ($null -ne $RunningInstances -and $RunningInstances.Count -gt 0) {
             Write-Host "  PID $($proc.Id)"
         }
         Write-Host ""
-        $CloseExisting = Read-Host "¿Cerrar instancias existentes antes de lanzar? (s/n) [n]"
-        if ([string]::IsNullOrWhiteSpace($CloseExisting)) { $CloseExisting = "n" }
-        if ($CloseExisting -in @("s", "S", "y", "Y")) {
+        $CloseAnswer = Read-Host "¿Cerrar instancias existentes antes de lanzar? (s/n) [n]"
+        if ([string]::IsNullOrWhiteSpace($CloseAnswer)) { $CloseAnswer = "n" }
+        if ($CloseAnswer -in @("s", "S", "y", "Y")) {
             foreach ($proc in $RunningInstances) {
                 Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
             }
