@@ -39,14 +39,16 @@ if (-not (Test-Path -LiteralPath $RvmBin)) {
 
 # ---------------------------------------------------------------------------
 # 2. Verificar versión
+# RVM emite códigos de escape ANSI — se eliminan antes de comparar
+# La versión aparece en las primeras líneas del output de --help
 # ---------------------------------------------------------------------------
-$VersionOutput = & $RvmBin --help 2>&1 | Select-Object -First 1
-$VersionLine = if ($VersionOutput) { $VersionOutput.ToString() } else { "" }
+$VersionBlock = (& $RvmBin --help 2>&1 | Select-Object -First 5 | ForEach-Object { $_.ToString() }) -join " "
+$VersionClean = $VersionBlock -replace '\x1b\[[0-9;]*m', ''
 
-if ($VersionLine -notlike "*$RequiredVersion*") {
+if ($VersionClean -notlike "*$RequiredVersion*") {
     Write-Error "ERROR: Versión de Retro Virtual Machine no compatible."
     Write-Error "  Requerida : $RequiredVersion"
-    Write-Error "  Detectada : $VersionLine"
+    Write-Error "  Detectada : $VersionClean"
     exit 1
 }
 

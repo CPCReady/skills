@@ -44,13 +44,16 @@ fi
 
 # ---------------------------------------------------------------------------
 # 2. Verificar versión
+# RVM emite códigos de escape ANSI en su cabecera — se eliminan antes de comparar
+# La versión aparece en las primeras líneas del output de --help
 # ---------------------------------------------------------------------------
-RVM_VERSION_LINE=$("$RVM_BIN" --help 2>&1 | head -1 || true)
+RVM_VERSION_BLOCK=$("$RVM_BIN" --help 2>&1 | head -5 | sed 's/\x1b\[[0-9;]*m//g' || true)
 
-if [[ "$RVM_VERSION_LINE" != *"$REQUIRED_VERSION"* ]]; then
+if [[ "$RVM_VERSION_BLOCK" != *"$REQUIRED_VERSION"* ]]; then
+	RVM_VERSION_CLEAN=$(echo "$RVM_VERSION_BLOCK" | tr -d '\n' | tr -s ' ')
 	echo "ERROR: Versión de Retro Virtual Machine no compatible." >&2
 	echo "  Requerida : $REQUIRED_VERSION" >&2
-	echo "  Detectada : $RVM_VERSION_LINE" >&2
+	echo "  Detectada : $RVM_VERSION_CLEAN" >&2
 	exit 1
 fi
 
