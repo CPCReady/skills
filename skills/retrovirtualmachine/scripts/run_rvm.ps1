@@ -81,7 +81,14 @@ if ($null -ne $RvmArgs -and $RvmArgs.Count -gt 0) {
 if ($Warp)     { $ExtraArgs += "--warp" }
 if ($NoShader) { $ExtraArgs += "--noshader" }
 if ($Play)     { $ExtraArgs += "--play" }
-if (-not [string]::IsNullOrWhiteSpace($Command)) { $ExtraArgs += "--command=$Command" }
+if (-not [string]::IsNullOrWhiteSpace($Command)) {
+    # Añadir retorno de carro al final del comando si no lo tiene ya
+    $CmdValue = $Command
+    if (-not $CmdValue.EndsWith("`n")) {
+        $CmdValue = $CmdValue + "`n"
+    }
+    $ExtraArgs += "--command=$CmdValue"
+}
 if ($Width -gt 0) { $ExtraArgs += "--width=$Width" }
 
 # ---------------------------------------------------------------------------
@@ -231,7 +238,34 @@ if ($PassThrough) {
 }
 
 # ---------------------------------------------------------------------------
-# 8. Lanzar RVM en background
+# 8. Verificar instancias abiertas de RVM
+# ---------------------------------------------------------------------------
+$RvmBinaryName = [System.IO.Path]::GetFileNameWithoutExtension($RvmBin)
+$RunningInstances = Get-Process -Name $RvmBinaryName -ErrorAction SilentlyContinue
+
+if ($null -ne $RunningInstances -and $RunningInstances.Count -gt 0) {
+    $PidCount = $RunningInstances.Count
+    if (-not [Console]::IsInputRedirected) {
+        Write-Host ""
+        Write-Host "### Instancias de RVM en ejecución: $PidCount"
+        Write-Host ""
+        foreach ($proc in $RunningInstances) {
+            Write-Host "  PID $($proc.Id)"
+        }
+        Write-Host ""
+        $CloseExisting = Read-Host "¿Cerrar instancias existentes antes de lanzar? (s/n) [n]"
+        if ([string]::IsNullOrWhiteSpace($CloseExisting)) { $CloseExisting = "n" }
+        if ($CloseExisting -in @("s", "S", "y", "Y")) {
+            foreach ($proc in $RunningInstances) {
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            }
+            Write-Host ""
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 9. Lanzar RVM en background
 # ---------------------------------------------------------------------------
 Start-Process -FilePath $RvmBin -ArgumentList $FinalArgs -WindowStyle Normal
 

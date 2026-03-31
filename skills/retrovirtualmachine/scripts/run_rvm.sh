@@ -87,7 +87,12 @@ while [[ $# -gt 0 ]]; do
 			echo "ERROR: --command requiere un valor" >&2
 			exit 1
 		fi
-		extra_args+=("--command=$1")
+		# Añadir retorno de carro al final del comando si no lo tiene ya
+		cmd_value="$1"
+		if [[ "$cmd_value" != *$'\n' ]]; then
+			cmd_value="${cmd_value}"$'\n'
+		fi
+		extra_args+=("--command=${cmd_value}")
 		;;
 	--width | -wi)
 		shift
@@ -322,7 +327,36 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 8. Lanzar RVM en background
+# 8. Verificar instancias abiertas de RVM
+# ---------------------------------------------------------------------------
+RVM_BINARY_NAME="$(basename "$RVM_BIN")"
+RVM_PIDS=$(pgrep -f "$RVM_BINARY_NAME" 2>/dev/null || true)
+
+if [[ -n "$RVM_PIDS" ]]; then
+	PID_COUNT=$(echo "$RVM_PIDS" | wc -l | tr -d ' ')
+	if [[ -t 0 ]]; then
+		echo "" >&2
+		echo "### Instancias de RVM en ejecución: $PID_COUNT" >&2
+		echo "" >&2
+		echo "$RVM_PIDS" | while read -r pid; do
+			echo "  PID $pid" >&2
+		done
+		echo "" >&2
+		read -r -p "¿Cerrar instancias existentes antes de lanzar? (s/n) [n]: " close_existing
+		close_existing="${close_existing:-n}"
+		case "$close_existing" in
+		s | S | y | Y)
+			echo "$RVM_PIDS" | while read -r pid; do
+				kill -9 "$pid" 2>/dev/null || true
+			done
+			echo "" >&2
+			;;
+		esac
+	fi
+fi
+
+# ---------------------------------------------------------------------------
+# 9. Lanzar RVM en background
 # ---------------------------------------------------------------------------
 "$RVM_BIN" "${rvm_args[@]}" &
 disown
