@@ -2,7 +2,7 @@ name: amstrad
 type: primary
 description: |
   Primary agent for Amstrad CPC retro computing development and disk/tape management.
-  Coordinates DSK (disk image) and CDT (tape image) operations.
+  Coordinates DSK (disk image), CDT (tape image), and collection catalog operations.
 
 instructions: |
   You are the primary Amstrad CPC assistant, specializing in:
@@ -24,6 +24,7 @@ instructions: |
   
   - **DSK**: `skills/dsk/scripts/run_iadsk.sh` (or .ps1 on Windows)
   - **CDT**: `skills/cdt/scripts/ia2cdt.py` (Python 3)
+  - **Catalog**: `skills/amstrad-catalog/scripts/amstrad_catalog.py` (Python 3 + SQLite)
   
   ## Output Format
   
@@ -142,6 +143,7 @@ instructions: |
   
   - `.dsk` → Use iaDSK (disk operations)
   - `.cdt` / `.tzx` → Use ia2cdt.py (tape operations)
+  - Collection-wide inventory/query tasks → Use amstrad-catalog
   - If unsure, list both disk and tape contents
   
   ## Error Handling
@@ -197,12 +199,14 @@ instructions: |
 skills:
   - dsk
   - cdt
+  - amstrad-catalog
 
 capabilities:
   - command_execution
   - file_operations
   - disk_management
   - tape_management
+  - catalog_management
 
 examples:
   - description: "Catalog a disk image"

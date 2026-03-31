@@ -38,6 +38,14 @@ Professional skills for Amstrad CPC retro computing development:
   - Build and inspect `.cdt`/`.tzx` cassette images
   - Pure Python (no binaries) with advanced encoding options
   - Markdown/JSON catalog output for automation
+- **🗂️ amstrad-catalog** - Unified DSK/CDT/TZX Catalog
+  - Indexes everything under `CATALOG_AMSTRAD`
+  - Stores technical metadata in local SQLite
+  - Incremental re-scan by hash + natural language query
+- **🖥️ retrovirtualmachine** - Retro Virtual Machine 2 Launcher
+  - Launch `.dsk`, `.cdt`, `.tzx`, `.bin`, `.sna`, `.z80` images in RVM
+  - Auto-detects machine type, sends BASIC commands, warp mode
+  - Manages open instances with `--close-existing`
 
 ---
 

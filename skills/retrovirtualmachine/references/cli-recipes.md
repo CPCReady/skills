@@ -48,6 +48,7 @@ RVM se lanza en **segundo plano** — el wrapper termina inmediatamente.
 | `--command <texto>` / `-c <texto>` | `-Command <texto>` | Enviar teclas al intérprete BASIC al arrancar |
 | `--width <px>` / `-wi <px>` | `-Width <px>` | Ancho de ventana (mínimo 700 píxeles) |
 | `--play` / `-p` | `-Play` | Auto play de cinta al inicio |
+| `--close-existing` / `-ce` | `-CloseExisting` | Cerrar instancias de RVM abiertas sin preguntar |
 | `--` | `--` | Pass-through: el resto de argumentos van directamente a RVM |
 | `--help` / `-h` | — | Mostrar ayuda del wrapper |
 
@@ -73,29 +74,29 @@ RVM se lanza en **segundo plano** — el wrapper termina inmediatamente.
 ### Lanzar imagen de disco
 
 ```bash
-./scripts/run_rvm.sh game.dsk
+./scripts/run_rvm.sh --close-existing game.dsk
 # Equivale a: RVM --boot=cpc6128 --insert game.dsk
 ```
 
 ```powershell
-.\scripts\run_rvm.ps1 game.dsk
+.\scripts\run_rvm.ps1 -CloseExisting game.dsk
 ```
 
 ### Lanzar cinta CDT
 
 ```bash
-./scripts/run_rvm.sh demo.cdt
+./scripts/run_rvm.sh --close-existing demo.cdt
 # Equivale a: RVM --boot=cpc464 --insert demo.cdt
 ```
 
 ```powershell
-.\scripts\run_rvm.ps1 demo.cdt
+.\scripts\run_rvm.ps1 -CloseExisting demo.cdt
 ```
 
 ### Lanzar cinta TZX
 
 ```bash
-./scripts/run_rvm.sh demo.tzx
+./scripts/run_rvm.sh --close-existing demo.tzx
 # Equivale a: RVM --boot=cpc464 --insert demo.tzx
 ```
 
@@ -103,39 +104,69 @@ RVM se lanza en **segundo plano** — el wrapper termina inmediatamente.
 
 ```bash
 # Usar CPC 464 con un juego en disco
-./scripts/run_rvm.sh --machine cpc464 game.dsk
+./scripts/run_rvm.sh --close-existing --machine cpc464 game.dsk
 ```
 
 ```powershell
-.\scripts\run_rvm.ps1 -Machine cpc664 game.dsk
+.\scripts\run_rvm.ps1 -CloseExisting -Machine cpc664 game.dsk
 ```
 
 ### Lanzar en modo acelerado (warp)
 
 ```bash
-./scripts/run_rvm.sh --warp game.dsk
-./scripts/run_rvm.sh --warp demo.cdt
+./scripts/run_rvm.sh --close-existing --warp game.dsk
+./scripts/run_rvm.sh --close-existing --warp demo.cdt
 ```
 
 ```powershell
-.\scripts\run_rvm.ps1 -Warp game.dsk
+.\scripts\run_rvm.ps1 -CloseExisting -Warp game.dsk
 ```
 
 ### Enviar comando BASIC al arrancar
 
 ```bash
-# Ejemplo: ejecutar RUN automáticamente
-./scripts/run_rvm.sh --command 'run"' demo.cdt
+# Ejecutar un programa al arrancar el disco
+./scripts/run_rvm.sh --close-existing --command 'RUN"GAME' game.dsk
+
+# Arrancar desde cinta con RUN
+./scripts/run_rvm.sh --close-existing --command 'RUN"' demo.cdt
 ```
 
 ```powershell
-.\scripts\run_rvm.ps1 -Command 'run"' demo.cdt
+.\scripts\run_rvm.ps1 -CloseExisting -Command 'RUN"GAME' game.dsk
 ```
+
+**Nota:** El retorno de carro final (`\n`) se añade automáticamente — no hace falta incluirlo.
+
+### Cerrar instancias abiertas antes de lanzar
+
+```bash
+# El flag --close-existing mata todos los procesos RVM existentes antes de lanzar
+./scripts/run_rvm.sh --close-existing game.dsk
+```
+
+```powershell
+.\scripts\run_rvm.ps1 -CloseExisting game.dsk
+```
+
+Sin este flag, en modo interactivo (terminal) el wrapper muestra la lista de PIDs y pregunta:
+
+```
+### Instancias de RVM en ejecución: 3
+
+  PID 76272
+  PID 76952
+  PID 78820
+
+¿Cerrar instancias existentes antes de lanzar? (s/n) [n]:
+```
+
+En modo no interactivo (agentes, pipes) sin el flag, las instancias se ignoran y RVM se lanza igualmente.
 
 ### Arrancar en modo standalone (sin archivo)
 
 ```bash
-# El wrapper preguntará qué máquina usar
+# El wrapper preguntará qué máquina usar (requiere terminal interactivo)
 ./scripts/run_rvm.sh
 ```
 
@@ -147,37 +178,37 @@ RVM se lanza en **segundo plano** — el wrapper termina inmediatamente.
 
 ```bash
 # El wrapper pedirá: máquina, dirección de carga, dirección de salto
-./scripts/run_rvm.sh programa.bin
+./scripts/run_rvm.sh --close-existing programa.bin
 ```
 
 En automatización, proporcionar todos los parámetros con pass-through:
 
 ```bash
-./scripts/run_rvm.sh --machine cpc6128 -- --boot=cpc6128 --load=0x4000 programa.bin --jump=0x4000
+./scripts/run_rvm.sh --close-existing -- --boot=cpc6128 --load=0x4000 programa.bin --jump=0x4000
 ```
 
 ### Cargar snapshot
 
 ```bash
 # El wrapper preguntará qué máquina usar
-./scripts/run_rvm.sh save.sna
-./scripts/run_rvm.sh save.z80
+./scripts/run_rvm.sh --close-existing save.sna
+./scripts/run_rvm.sh --close-existing save.z80
 ```
 
 Con máquina explícita:
 
 ```bash
-./scripts/run_rvm.sh --machine cpc6128 save.sna
+./scripts/run_rvm.sh --close-existing --machine cpc6128 save.sna
 ```
 
 ### Ancho de ventana personalizado
 
 ```bash
-./scripts/run_rvm.sh --width 1400 game.dsk
+./scripts/run_rvm.sh --close-existing --width 1400 game.dsk
 ```
 
 ```powershell
-.\scripts\run_rvm.ps1 -Width 1400 game.dsk
+.\scripts\run_rvm.ps1 -CloseExisting -Width 1400 game.dsk
 ```
 
 ### Pass-through directo a RVM
@@ -185,13 +216,13 @@ Con máquina explícita:
 Para usar flags de RVM no cubiertos por el wrapper:
 
 ```bash
-./scripts/run_rvm.sh -- --boot=cpc6128 --insert game.dsk --warp --noshader
-./scripts/run_rvm.sh -- --boot=cpc464 --insert tape.cdt --play --command 'run"'
-./scripts/run_rvm.sh -- --boot=cpc6128 --dandanator romset.zip
+./scripts/run_rvm.sh --close-existing -- --boot=cpc6128 --insert game.dsk --warp --noshader
+./scripts/run_rvm.sh --close-existing -- --boot=cpc464 --insert tape.cdt --play --command 'run"'
+./scripts/run_rvm.sh --close-existing -- --boot=cpc6128 --dandanator romset.zip
 ```
 
 ```powershell
-.\scripts\run_rvm.ps1 -- --boot=cpc6128 --insert game.dsk --warp
+.\scripts\run_rvm.ps1 -CloseExisting -- --boot=cpc6128 --insert game.dsk --warp
 ```
 
 ---
@@ -242,10 +273,18 @@ Estos flags se pasan directamente al binario de RVM mediante `--`:
 **Error de versión:**
 - Descargar e instalar RVM v2.0 BETA-1 r7 desde https://www.retrovirtualmachine.org
 
+**Las instancias anteriores no se cierran:**
+- Pasar `--close-existing` / `-CloseExisting` al wrapper.
+- Sin este flag, en modo no interactivo (agentes) las instancias abiertas se ignoran.
+
 **Cinta no arranca sola:**
 - Añadir `--command 'run"'` para enviar el comando BASIC automáticamente.
 - O usar `--play` para activar el reproductor automático de cinta.
 
 **Disco no carga el menú:**
 - Algunos juegos requieren teclar `CAT` o `RUN"DISC` manualmente.
-- Usar `--command 'run"disc'` o el comando específico del juego.
+- Usar `--command 'RUN"DISC'` o el comando específico del juego (ej: `RUN"JEDI`).
+
+**El comando BASIC no se ejecuta:**
+- El wrapper añade `\n` automáticamente al final del comando — no hace falta incluirlo.
+- Comprobar que el nombre del programa coincide con el del disco (usar `CAT` para listar).

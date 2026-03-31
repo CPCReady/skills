@@ -69,47 +69,93 @@ El usuario puede sobrescribir siempre la máquina con `--machine` / `-m`.
 
 ---
 
+## Opciones del wrapper
+
+| Opción (Bash) | Opción (PowerShell) | Descripción |
+|---------------|---------------------|-------------|
+| `--machine <id>` / `-m <id>` | `-Machine <id>` | Máquina CPC a emular |
+| `--warp` / `-w` | `-Warp` | Modo acelerado (sin límite de velocidad) |
+| `--noshader` / `-ns` | `-NoShader` | Desactivar shader de pantalla |
+| `--command <texto>` / `-c <texto>` | `-Command <texto>` | Enviar teclas al intérprete BASIC al arrancar |
+| `--width <px>` / `-wi <px>` | `-Width <px>` | Ancho de ventana (mínimo 700 píxeles) |
+| `--play` / `-p` | `-Play` | Auto play de cinta al inicio |
+| `--close-existing` / `-ce` | `-CloseExisting` | Cerrar instancias de RVM abiertas sin preguntar |
+| `--` | `--` | Pass-through: el resto de argumentos van directamente a RVM |
+| `--help` / `-h` | — | Mostrar ayuda del wrapper |
+
+---
+
 ## Ejecutar por sistema operativo
 
 macOS / Linux:
 
 ```bash
 # Lanzar disco (máquina por defecto: cpc6128)
-./scripts/run_rvm.sh game.dsk
+./scripts/run_rvm.sh --close-existing game.dsk
 
 # Lanzar cinta (máquina por defecto: cpc464)
-./scripts/run_rvm.sh demo.cdt
+./scripts/run_rvm.sh --close-existing demo.cdt
 
 # Especificar máquina explícitamente
-./scripts/run_rvm.sh --machine cpc464 game.dsk
+./scripts/run_rvm.sh --close-existing --machine cpc464 game.dsk
 
 # Modo acelerado
-./scripts/run_rvm.sh --warp game.dsk
+./scripts/run_rvm.sh --close-existing --warp game.dsk
+
+# Enviar comando BASIC al arrancar
+./scripts/run_rvm.sh --close-existing --command 'RUN"GAME' game.dsk
 
 # Sin archivo (modo standalone - pregunta máquina)
 ./scripts/run_rvm.sh
 
 # Pass-through directo a RVM
-./scripts/run_rvm.sh -- --boot=cpc6128 --insert game.dsk --warp
+./scripts/run_rvm.sh --close-existing -- --boot=cpc6128 --insert game.dsk --warp
 ```
 
 Windows:
 
 ```powershell
 # Lanzar disco
-.\scripts\run_rvm.ps1 game.dsk
+.\scripts\run_rvm.ps1 -CloseExisting game.dsk
 
 # Lanzar cinta
-.\scripts\run_rvm.ps1 demo.cdt
+.\scripts\run_rvm.ps1 -CloseExisting demo.cdt
 
 # Especificar máquina
-.\scripts\run_rvm.ps1 -Machine cpc464 game.dsk
+.\scripts\run_rvm.ps1 -CloseExisting -Machine cpc464 game.dsk
 
 # Modo acelerado
-.\scripts\run_rvm.ps1 -Warp game.dsk
+.\scripts\run_rvm.ps1 -CloseExisting -Warp game.dsk
+
+# Enviar comando BASIC al arrancar
+.\scripts\run_rvm.ps1 -CloseExisting -Command 'RUN"GAME' game.dsk
 
 # Pass-through directo a RVM
-.\scripts\run_rvm.ps1 -- --boot=cpc6128 --insert game.dsk --warp
+.\scripts\run_rvm.ps1 -CloseExisting -- --boot=cpc6128 --insert game.dsk --warp
+```
+
+---
+
+## Instancias abiertas de RVM
+
+El wrapper detecta automáticamente si hay instancias de RVM en ejecución antes de lanzar una nueva.
+
+**Comportamiento según contexto:**
+
+| Contexto | Sin `--close-existing` | Con `--close-existing` |
+|----------|------------------------|------------------------|
+| Terminal interactivo (TTY) | Pregunta al usuario si cerrar | Cierra sin preguntar |
+| No interactivo (agente, pipes) | Ignora las instancias y lanza | Cierra sin preguntar |
+
+**Ejemplo del prompt interactivo (solo en terminal):**
+```
+### Instancias de RVM en ejecución: 3
+
+  PID 76272
+  PID 76952
+  PID 78820
+
+¿Cerrar instancias existentes antes de lanzar? (s/n) [n]:
 ```
 
 ---
@@ -160,12 +206,13 @@ Cuando stdin no es un terminal (pipes, scripts, CI), los wrappers **no usan valo
 
 - Máquina: **FALLA si es necesaria y no se proporcionó** con `--machine`.
 - Direcciones `.bin`: **FALLA** si no se proporcionan explícitamente.
+- Instancias abiertas: **se ignoran** a menos que se pase `--close-existing`.
 
 Ejemplo de automatización correcta:
 
 ```bash
-./scripts/run_rvm.sh --machine cpc464 demo.cdt
-./scripts/run_rvm.sh --machine cpc6128 -- --boot=cpc6128 --insert game.dsk --warp
+./scripts/run_rvm.sh --close-existing --machine cpc464 demo.cdt
+./scripts/run_rvm.sh --close-existing --machine cpc6128 -- --boot=cpc6128 --insert game.dsk --warp
 ```
 
 ---
@@ -191,6 +238,7 @@ Cuando el usuario solicita lanzar un archivo con RVM, el agente **DEBE**:
 ```bash
 ./scripts/run_rvm.sh --close-existing programa.bin
 ./scripts/run_rvm.sh --close-existing game.dsk
+./scripts/run_rvm.sh --close-existing --command 'RUN"GAME' game.dsk
 ```
 
 **Excepciones:** Solo proporcionar `--machine`, `--load`, `--jump` si:
@@ -215,7 +263,9 @@ El agente **DEBE**:
 |-------|-------|
 | Archivo | `game.dsk` |
 | Máquina | cpc6128 |
+| Comando | `RUN"GAME` |
 | Modo | Normal |
+| Instancias previas | cerradas |
 ```
 
 3. **NO mostrar** la ruta del binario, el comando construido ni argumentos internos.

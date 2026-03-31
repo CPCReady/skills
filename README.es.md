@@ -24,6 +24,8 @@ Instalar una skill específica:
 ```bash
 npx skills add CPCReady/skills/dsk   # Discos
 npx skills add CPCReady/skills/cdt   # Cintas
+npx skills add CPCReady/skills/amstrad-catalog   # Catálogo unificado
+npx skills add CPCReady/skills/retrovirtualmachine   # Lanzador de emulador RVM
 ```
 
 ### 2. Instalar Agente Amstrad (solo OpenCode)
@@ -271,6 +273,109 @@ Automatiza el nuevo script Python ia2cdt para crear y validar imágenes de casse
 
 ---
 
+### 🗂️ amstrad-catalog - Catálogo unificado de colección
+
+Indexa todas las imágenes `.dsk`, `.cdt` y `.tzx` dentro de `CATALOG_AMSTRAD` en una base SQLite local y permite consultas en lenguaje natural.
+
+#### Características
+- Ruta raíz obligatoria por `CATALOG_AMSTRAD`
+- Base SQLite en `$CATALOG_AMSTRAD/.amstrad-catalog/catalog.db`
+- Indexación incremental por `size + mtime + sha256`
+- Extracción técnica usando iaDSK e ia2cdt
+- Consultas mediante `query --question "..."`
+
+#### Resumen de comandos
+
+| Comando | Descripción |
+|---------|-------------|
+| `index` | Escaneo incremental y actualización |
+| `reindex --full` | Reconstrucción completa |
+| `stats` | Estado global y último escaneo |
+| `query --question "<texto>"` | Consulta en lenguaje natural |
+
+#### Ejemplos de prompts
+```
+"Indexa toda mi colección Amstrad"
+"Muéstrame cintas con bloques turbo"
+"Busca imágenes duplicadas por hash"
+"Lista discos de más de 700 KB"
+```
+
+---
+
+### 🖥️ retrovirtualmachine - Lanzador de emulador RVM
+
+Lanza **Retro Virtual Machine 2** (v2.0 BETA-1 r7) con imágenes de disco, cinta y binarios de Amstrad CPC.
+
+**Requisito:** Variable de entorno `RETRO_VIRTUAL_MACHINE_PATH` apuntando al binario de RVM.
+
+#### Características
+- Auto-detecta el tipo de máquina por extensión de archivo (`.dsk` → cpc6128, `.cdt`/`.tzx` → cpc464)
+- Envía comandos BASIC al inicio con `--command`
+- Modo warp, control de shader y ancho de ventana
+- Gestión de instancias abiertas: `--close-existing` cierra los procesos RVM en ejecución antes de lanzar
+- Prompts interactivos para selección de máquina y direcciones de carga/salto de binarios
+- Lanza RVM en segundo plano — el wrapper termina inmediatamente
+
+#### Tipos de Archivo Soportados
+
+| Extensión | Máquina por defecto | Notas |
+|-----------|---------------------|-------|
+| `.dsk` | `cpc6128` | Imagen de disco |
+| `.cdt` | `cpc464` | Cinta CPC |
+| `.tzx` | `cpc464` | Cinta TZX |
+| `.bin` | preguntar | Solicita máquina, dirección de carga y salto |
+| `.sna` / `.z80` | preguntar | Solicita máquina |
+| (ninguno) | preguntar | Modo standalone |
+
+#### Opciones del Wrapper
+
+| Opción (Bash) | Opción (PowerShell) | Descripción |
+|---------------|---------------------|-------------|
+| `--machine <id>` / `-m` | `-Machine <id>` | Máquina CPC a emular |
+| `--warp` / `-w` | `-Warp` | Modo acelerado |
+| `--noshader` / `-ns` | `-NoShader` | Desactivar shader de pantalla |
+| `--command <texto>` / `-c` | `-Command <texto>` | Enviar pulsaciones BASIC al inicio |
+| `--width <px>` / `-wi` | `-Width <px>` | Ancho de ventana (mín. 700) |
+| `--play` / `-p` | `-Play` | Reproducir cinta automáticamente |
+| `--close-existing` / `-ce` | `-CloseExisting` | Cerrar instancias RVM abiertas antes de lanzar |
+| `--` | `--` | Pasar argumentos restantes directamente a RVM |
+
+#### Ejemplos de Prompts
+```
+"Lanza game.dsk en RVM"
+"Abre demo.cdt y ejecuta RUN automáticamente"
+"Lanza EL_RETORNO_DEL_JEDI.DSK y ejecuta RUN\"JEDI"
+"Inicia RVM con el snapshot save.sna"
+```
+
+#### Comandos de Ejemplo (macOS/Linux)
+```bash
+# Lanzar imagen de disco (máquina por defecto: cpc6128)
+./scripts/run_rvm.sh --close-existing game.dsk
+
+# Lanzar cinta y enviar comando BASIC
+./scripts/run_rvm.sh --close-existing --command 'RUN"' demo.cdt
+
+# Lanzar disco y ejecutar un programa específico
+./scripts/run_rvm.sh --close-existing --command 'RUN"GAME' game.dsk
+
+# Modo warp
+./scripts/run_rvm.sh --close-existing --warp game.dsk
+
+# Especificar máquina explícitamente
+./scripts/run_rvm.sh --close-existing --machine cpc464 game.dsk
+```
+
+```powershell
+# Windows
+.\scripts\run_rvm.ps1 -CloseExisting game.dsk
+.\scripts\run_rvm.ps1 -CloseExisting -Command 'RUN"GAME' game.dsk
+.\scripts\run_rvm.ps1 -CloseExisting -Warp game.dsk
+```
+
+---
+
 ### 🎯 Flujos de Trabajo Complejos
 
 #### Crear disco y añadir múltiples archivos
@@ -426,12 +531,24 @@ CPCReady/skills/
 ├── .claude-plugin/          # Configuración del marketplace
 │   └── marketplace.json
 ├── skills/                  # Skills individuales
-│   └── dsk/                # Editor de discos iaDSK
-│       ├── SKILL.md        # Instrucciones de la skill para agentes
-│       ├── agents/         # Agentes auxiliares
-│       ├── assets/         # Binarios precompilados de iaDSK
-│       ├── references/     # Documentación de iaDSK
-│       └── scripts/        # Scripts de instalación y ejecución
+│   ├── dsk/                # Editor de discos iaDSK
+│   │   ├── SKILL.md        # Instrucciones de la skill para agentes
+│   │   ├── agents/         # Agentes auxiliares
+│   │   ├── assets/         # Binarios precompilados de iaDSK
+│   │   ├── references/     # Documentación de iaDSK
+│   │   └── scripts/        # Scripts de instalación y ejecución
+│   ├── cdt/                # Toolkit de cintas ia2cdt
+│   │   ├── SKILL.md
+│   │   ├── scripts/
+│   │   └── references/
+│   ├── amstrad-catalog/    # Catálogo unificado de colección
+│   │   ├── SKILL.md
+│   │   ├── scripts/
+│   │   └── references/
+│   └── retrovirtualmachine/ # Lanzador de emulador RVM
+│       ├── SKILL.md
+│       ├── scripts/        # run_rvm.sh / run_rvm.ps1
+│       └── references/     # cli-recipes.md
 ├── .gitignore
 ├── LICENSE                 # Licencia MIT
 ├── README.md              # Este archivo

@@ -24,6 +24,8 @@ Install a specific skill:
 ```bash
 npx skills add CPCReady/skills/dsk   # Disk images
 npx skills add CPCReady/skills/cdt   # Tape images
+npx skills add CPCReady/skills/amstrad-catalog   # Unified catalog
+npx skills add CPCReady/skills/retrovirtualmachine   # RVM emulator launcher
 ```
 
 ### 2. Install Amstrad Agent (OpenCode only)
@@ -271,6 +273,109 @@ Automation layer for the new Python ia2cdt script. Create and validate Amstrad C
 
 ---
 
+### 🗂️ amstrad-catalog - Unified Collection Catalog
+
+Indexes all `.dsk`, `.cdt`, and `.tzx` images under `CATALOG_AMSTRAD` into a local SQLite database and enables natural-language queries.
+
+#### Features
+- Mandatory root path via `CATALOG_AMSTRAD`
+- SQLite database at `$CATALOG_AMSTRAD/.amstrad-catalog/catalog.db`
+- Incremental indexing using `size + mtime + sha256`
+- Technical extraction from both iaDSK and ia2cdt
+- Query interface via `query --question "..."`
+
+#### Command Summary
+
+| Command | Description |
+|---------|-------------|
+| `index` | Incremental scan and update |
+| `reindex --full` | Full rebuild |
+| `stats` | Global status and last run summary |
+| `query --question "<text>"` | Natural language lookup |
+
+#### Example Prompts
+```
+"Index my full Amstrad collection"
+"Show tapes with turbo blocks"
+"Find duplicate images by hash"
+"List disk images bigger than 700 KB"
+```
+
+---
+
+### 🖥️ retrovirtualmachine - RVM Emulator Launcher
+
+Launches **Retro Virtual Machine 2** (v2.0 BETA-1 r7) with Amstrad CPC disk, tape, and binary images.
+
+**Requirement:** `RETRO_VIRTUAL_MACHINE_PATH` environment variable pointing to the RVM binary.
+
+#### Features
+- Auto-detects machine type from file extension (`.dsk` → cpc6128, `.cdt`/`.tzx` → cpc464)
+- Sends BASIC commands at startup with `--command`
+- Warp mode, shader control, window width
+- Manages open instances: `--close-existing` kills running RVM processes before launching
+- Interactive prompts for machine selection and binary load/jump addresses
+- Launches RVM in the background — wrapper exits immediately
+
+#### Supported File Types
+
+| Extension | Default machine | Notes |
+|-----------|----------------|-------|
+| `.dsk` | `cpc6128` | Disk image |
+| `.cdt` | `cpc464` | CPC tape |
+| `.tzx` | `cpc464` | TZX tape |
+| `.bin` | ask | Prompts for machine, load addr, jump addr |
+| `.sna` / `.z80` | ask | Prompts for machine |
+| (none) | ask | Standalone mode |
+
+#### Wrapper Options
+
+| Option (Bash) | Option (PowerShell) | Description |
+|---------------|---------------------|-------------|
+| `--machine <id>` / `-m` | `-Machine <id>` | CPC machine to emulate |
+| `--warp` / `-w` | `-Warp` | Accelerated mode |
+| `--noshader` / `-ns` | `-NoShader` | Disable screen shader |
+| `--command <text>` / `-c` | `-Command <text>` | Send BASIC keystrokes at startup |
+| `--width <px>` / `-wi` | `-Width <px>` | Window width (min 700) |
+| `--play` / `-p` | `-Play` | Auto play tape |
+| `--close-existing` / `-ce` | `-CloseExisting` | Kill open RVM instances before launching |
+| `--` | `--` | Pass remaining args directly to RVM |
+
+#### Example Prompts
+```
+"Launch game.dsk in RVM"
+"Open demo.cdt and run RUN automatically"
+"Launch EL_RETORNO_DEL_JEDI.DSK and execute RUN\"JEDI"
+"Start RVM with save.sna snapshot"
+```
+
+#### Example Commands (macOS/Linux)
+```bash
+# Launch a disk image (default machine: cpc6128)
+./scripts/run_rvm.sh --close-existing game.dsk
+
+# Launch tape and send BASIC command
+./scripts/run_rvm.sh --close-existing --command 'RUN"' demo.cdt
+
+# Launch disk and run a specific program
+./scripts/run_rvm.sh --close-existing --command 'RUN"GAME' game.dsk
+
+# Warp mode
+./scripts/run_rvm.sh --close-existing --warp game.dsk
+
+# Specify machine explicitly
+./scripts/run_rvm.sh --close-existing --machine cpc464 game.dsk
+```
+
+```powershell
+# Windows
+.\scripts\run_rvm.ps1 -CloseExisting game.dsk
+.\scripts\run_rvm.ps1 -CloseExisting -Command 'RUN"GAME' game.dsk
+.\scripts\run_rvm.ps1 -CloseExisting -Warp game.dsk
+```
+
+---
+
 ### 🎯 Complex Workflows
 
 #### Create disk and add multiple files
@@ -426,12 +531,24 @@ CPCReady/skills/
 ├── .claude-plugin/          # Marketplace configuration
 │   └── marketplace.json
 ├── skills/                  # Individual skills
-│   └── dsk/                # iaDSK disk editor
-│       ├── SKILL.md        # Skill instructions for agents
-│       ├── agents/         # Helper agents
-│       ├── assets/         # Precompiled iaDSK binaries
-│       ├── references/     # iaDSK documentation
-│       └── scripts/        # Installation & execution scripts
+│   ├── dsk/                # iaDSK disk editor
+│   │   ├── SKILL.md        # Skill instructions for agents
+│   │   ├── agents/         # Helper agents
+│   │   ├── assets/         # Precompiled iaDSK binaries
+│   │   ├── references/     # iaDSK documentation
+│   │   └── scripts/        # Installation & execution scripts
+│   ├── cdt/                # ia2cdt tape toolkit
+│   │   ├── SKILL.md
+│   │   ├── scripts/
+│   │   └── references/
+│   ├── amstrad-catalog/    # Unified collection catalog
+│   │   ├── SKILL.md
+│   │   ├── scripts/
+│   │   └── references/
+│   └── retrovirtualmachine/ # RVM emulator launcher
+│       ├── SKILL.md
+│       ├── scripts/        # run_rvm.sh / run_rvm.ps1
+│       └── references/     # cli-recipes.md
 ├── .gitignore
 ├── LICENSE                 # MIT License
 ├── README.md              # This file

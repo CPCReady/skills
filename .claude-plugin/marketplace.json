@@ -19,7 +19,10 @@
       ],
       "skills": [
         "./skills/dsk",
-        "./skills/cdt"
+        "./skills/cdt",
+        "./skills/rom",
+        "./skills/m4board",
+        "./skills/amstrad-catalog"
       ]
     }
   ]
