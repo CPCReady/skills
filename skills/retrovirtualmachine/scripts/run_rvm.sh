@@ -330,15 +330,20 @@ fi
 # 8. Verificar instancias abiertas de RVM
 # ---------------------------------------------------------------------------
 RVM_BINARY_NAME="$(basename "$RVM_BIN")"
-RVM_PIDS=$(pgrep -f "$RVM_BINARY_NAME" 2>/dev/null || true)
 
-if [[ -n "$RVM_PIDS" ]]; then
-	PID_COUNT=$(echo "$RVM_PIDS" | wc -l | tr -d ' ')
+# Leer PIDs en array — compatible con bash 3+ (macOS default)
+RVM_PIDS=()
+while IFS= read -r pid; do
+	[[ -n "$pid" ]] && RVM_PIDS+=("$pid")
+done < <(pgrep -f "$RVM_BINARY_NAME" 2>/dev/null || true)
+
+if [[ ${#RVM_PIDS[@]} -gt 0 ]]; then
+	PID_COUNT="${#RVM_PIDS[@]}"
 	if [[ -t 0 ]]; then
 		echo "" >&2
 		echo "### Instancias de RVM en ejecución: $PID_COUNT" >&2
 		echo "" >&2
-		echo "$RVM_PIDS" | while read -r pid; do
+		for pid in "${RVM_PIDS[@]}"; do
 			echo "  PID $pid" >&2
 		done
 		echo "" >&2
@@ -346,7 +351,7 @@ if [[ -n "$RVM_PIDS" ]]; then
 		close_existing="${close_existing:-n}"
 		case "$close_existing" in
 		s | S | y | Y)
-			echo "$RVM_PIDS" | while read -r pid; do
+			for pid in "${RVM_PIDS[@]}"; do
 				kill -9 "$pid" 2>/dev/null || true
 			done
 			echo "" >&2
