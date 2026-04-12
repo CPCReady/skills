@@ -33,10 +33,10 @@ __version__ = "1.0"
 
 import sys
 import argparse
+import ast
 import math
 import json
 import os
-import subprocess
 from typing import List, Union
 
 AMSDOS_BAS_TYPE = 0
@@ -53,26 +53,25 @@ DEF_PAUSE_FILE = 12000  # ms
 
 
 def is_binary_file(filepath: str) -> bool:
-    """Check if a file is binary (not text)."""
+    """Check if a file is binary (not text) using magic bytes and extension only.
+    No subprocess calls to avoid COMMAND_EXECUTION risk."""
     if not os.path.isfile(filepath):
         return False
-    try:
-        result = subprocess.run(
-            ["file", "--mime-type", "-b", filepath],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        mime = result.stdout.strip().lower()
-        if "text" in mime or "application/json" in mime:
-            return False
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
     ext = os.path.splitext(filepath)[1].lower()
     text_extensions = {".bas", ".txt", ".asm", ".s", ".inc", ".h", ".c", ".py"}
     if ext in text_extensions:
         return False
-    return True
+    # Read first 512 bytes and look for null bytes (strong indicator of binary)
+    try:
+        with open(filepath, "rb") as fd:
+            chunk = fd.read(512)
+        if b"\x00" in chunk:
+            return True
+        # If the chunk decodes cleanly as UTF-8 it is likely text
+        chunk.decode("utf-8")
+        return False
+    except (IOError, UnicodeDecodeError):
+        return True
 
 
 def prompt_for_addresses(filepath: str) -> tuple:
@@ -1377,10 +1376,15 @@ def run_read_mapfile(mapfile):
     print("[cdt] reading map file", mapfile)
     try:
         with open(mapfile, "r") as fd:
-            content = str.join("", fd.readlines())
-            return eval(content)
+            content = fd.read()
+        # Use ast.literal_eval instead of eval() to prevent arbitrary code execution.
+        # Only Python literals (dicts, lists, strings, numbers) are accepted.
+        return ast.literal_eval(content)
     except IOError:
         print("[cdt] error reading file:", mapfile)
+        sys.exit(1)
+    except (ValueError, SyntaxError) as e:
+        print(f"[cdt] invalid map file format (only Python literals allowed): {e}")
         sys.exit(1)
 
 
@@ -1408,7 +1412,7 @@ def run_put_file(filein, args, cdt, header):
         header.addr_start = 0x4000
         header.addr_load = 0x4000
         if args.name != None:
-            header.filename = args.name[0:16]
+            header.filename = sanitize_label(args.name, 16)
         if args.map_file != None:
             mapfile = run_read_mapfile(args.map_file)
         if args.start_addr != None:
@@ -1447,6 +1451,15 @@ def aux_int(param):
     To allow hex values we need to 'auto' detect the base.
     """
     return int(param, 0)
+
+
+def sanitize_label(text: str, maxlen: int = 16) -> str:
+    """Sanitize a user-supplied string used as a CDT filename/label.
+    Strips control characters and non-printable ASCII to prevent prompt
+    injection when the value is echoed back through agent output.
+    Only printable ASCII (0x20-0x7E) is kept."""
+    sanitized = "".join(ch for ch in text if 0x20 <= ord(ch) <= 0x7E)
+    return sanitized[:maxlen]
 
 
 # ============================================================================
@@ -1549,10 +1562,10 @@ def cmd_save(args):
 
         # Set name
         if args.name:
-            header.filename = args.name[0:16]
+            header.filename = sanitize_label(args.name, 16)
         else:
             basename = os.path.basename(args.file)
-            header.filename = basename[0:16]
+            header.filename = sanitize_label(basename, 16)
 
         # Set addresses
         header.addr_load = args.load_addr if args.load_addr is not None else 0x4000
