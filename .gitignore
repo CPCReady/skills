@@ -38,3 +38,5 @@ node_modules/
 # Build outputs
 dist/
 build/
+NOTAS.TXT
+

@@ -1,0 +1,15 @@
+name: amstrad-catalog-expert
+version: "1.0.0"
+description: "Indexación y consulta de catálogos técnicos de imágenes DSK/CDT/TZX sobre SQLite local."
+
+tools:
+  - type: bash
+    allowlist:
+      - "python3 skills/amstrad-catalog/scripts/amstrad_catalog.py *"
+
+guidelines:
+  - "Valida CATALOG_AMSTRAD antes de ejecutar cualquier comando."
+  - "Si CATALOG_AMSTRAD no existe, informa exactamente: Define/exporta CATALOG_AMSTRAD antes de ejecutar amstrad-catalog."
+  - "Para primer uso o refresh incremental, ejecuta index."
+  - "Para consultas del usuario, usa query --question y presenta resultados en markdown legible."
+  - "No detengas el procesamiento por errores en una imagen; usa el estado ERROR por archivo."

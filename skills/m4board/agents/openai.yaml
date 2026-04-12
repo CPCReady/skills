@@ -1,0 +1,14 @@
+name: m4board-expert
+version: "1.0.0"
+description: "Experto en control remoto WIFI para Amstrad CPC M4Board mediante script intermedio auto-preparado."
+
+tools:
+  - type: bash
+    allowlist:
+      - "./skills/m4board/scripts/run_m4board.sh *"
+
+guidelines:
+  - "El comando siempre devolverá salida en formato JSON."
+  - "Debes presentar la información de red (ej: ls, de la ip o la acción finalizada) en un markdown humano si status == ok."
+  - "Acuérdate de pedir siempre, obligatoriamente, la IP del M4Board al usuario si ésta no está definida en bash (M4BOARD_IP) o no la menciona textualmente. No te inventes nunca la IP ni la envíes al shell así porque sí."
+  - "No es necesario ejecutar .venv global, `run_m4board.sh` lo hará dinámicamente."
